@@ -1,3 +1,6 @@
 <resources>
     <string name="app_name">ProjetoPDM</string>
+    <string name= "hello">Olá</string>
+    <string name = "create_account">Crie uma conta</string>
+    <string name = "welcome">Bem-Vindo</string>
 </resources>

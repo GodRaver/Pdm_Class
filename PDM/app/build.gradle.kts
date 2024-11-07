@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = "pt.ipca.projetopdm"
-    compileSdk = 33
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "pt.ipca.projetopdm"
