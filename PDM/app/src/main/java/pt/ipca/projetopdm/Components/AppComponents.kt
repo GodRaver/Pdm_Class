@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -36,7 +37,7 @@ fun NormalTextComponent(value:String){
             fontWeight = FontWeight.Normal,
             fontStyle = FontStyle.Normal
         )
-        , color = colorResource(id = R.color.text),
+        , color = colorResource(id = R.color.TextColor),
         textAlign = TextAlign.Center
     )
 
@@ -56,7 +57,7 @@ fun HeadingTextComponent(value:String){
             fontWeight = FontWeight.Bold,
             fontStyle = FontStyle.Normal
         )
-        , color = colorResource(id = R.color.text),
+        , color = colorResource(id = R.color.TextColor),
         textAlign = TextAlign.Center
     )
 
@@ -64,27 +65,29 @@ fun HeadingTextComponent(value:String){
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MyTextField(labelValue:String){
-
+fun MyTextField(labelValue: String) {
     val textValue = remember {
-
         mutableStateOf("")
     }
 
-    
     OutlinedTextField(
-        label = {Text(text = labelValue)},
-        value = textValue,
-        colors = TextFieldDefaults.outlinedTextFieldColors(
-            focusedBorderColor = primary,
-            focusedLabelColor = primary,
-            cursorColor = primary
-        ),
-        keyboardOptions = KeyboardOptions.Default,
+        label = { Text(text = labelValue) },
         value = textValue.value,
         onValueChange = {
-        textValue.value = it
-             },
-        )
+            textValue.value = it
+        },
+        colors = TextFieldDefaults.outlinedTextFieldColors(
+            focusedBorderColor = MaterialTheme.colorScheme.primary,
+            focusedLabelColor = MaterialTheme.colorScheme.primary,
+            cursorColor = MaterialTheme.colorScheme.primary
+        ),
+        keyboardOptions = KeyboardOptions.Default,
+        singleLine = true,
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 56.dp) // Define uma altura mínima para o campo
+    )
 }
+
+
 

@@ -1,6 +1,18 @@
 <resources>
-    <string name="app_name">ProjetoPDM</string>
-    <string name= "hello">Olá</string>
-    <string name = "create_account">Crie uma conta</string>
-    <string name = "welcome">Bem-Vindo</string>
+    <string name="app_name">socialstore-PDM</string>
+    <string name="sign_in">Sign In</string>
+    <string name="sign_in_continue">Sign In to continue</string>
+    <string name="name">Full Name</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="hide_password">Hide Password</string>
+    <string name="show_password">Show Password</string>
+    <string name="terms_and_conditions">By continuing you accept our Privacy Policy and Terms</string>
+    <string name="terms_and_conditions_privacy">Privacy Policy</string>
+    <string name="terms_and_conditions_header">Terms</string>
+    <string name="register">Register</string>
+    <string name="login">Login</string>
+    <string name="go_login">Already have an account? Login</string>
+    <string name="forgot_password">Did you forget your password?</string>
+
 </resources>

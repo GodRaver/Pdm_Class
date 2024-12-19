@@ -6,12 +6,12 @@
     <color name="teal_200">#FF03DAC5</color>
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
-    <color name="gray">#7B6F72</color>
-    <color name="primary">#92A3FD</color>
-    <color name="secondary">#9DCEFF</color>
-    <color name="text">#1D1617</color>
-    <color name="accent">#C58BF2</color>
+    <color name="White">#FFFFFFFF</color>
+    <color name="GreyColor">#7B6F72</color>
+    <color name="Primary">#92A3FD</color>
+    <color name="Secondary">#9DCEFF</color>
+    <color name="TextColor">#1D1617</color>
+    <color name="AccentColor">#C58BF2</color>
 
 
 </resources>

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "959069307766",
+    "project_id": "socialstore-app-pdm",
+    "storage_bucket": "socialstore-app-pdm.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:959069307766:android:c1d0469f6e7b2bcd287057",
+        "android_client_info": {
+          "package_name": "pt.ipca.projetopdm"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAvmTAWt5N2vjA6_m7aBeomPbBYwn6rIi8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
