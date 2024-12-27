@@ -12,6 +12,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 import pt.ipca.projetopdm.UserInterface.NavControllerNavigation
 import pt.ipca.projetopdm.app.AutenticacaoApp
@@ -23,10 +24,15 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        FirebaseApp.initializeApp(this)
+
+
         auth = FirebaseAuth.getInstance()
 
         setContent {
-                NavControllerNavigation(auth = auth)
+
+
+            NavControllerNavigation(auth = auth)
             }
 
 

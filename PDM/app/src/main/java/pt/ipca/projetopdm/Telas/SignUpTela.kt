@@ -39,6 +39,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.firestore.FirebaseFirestore
 import pt.ipca.projetopdm.Components.UnderlineSignUpText
 
 
@@ -57,8 +58,30 @@ fun SignUpTela(
     var confirmPassword by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     val auth = FirebaseAuth.getInstance()
+    val db = FirebaseFirestore.getInstance()
     var isNavigating by remember { mutableStateOf(false) } // Flag para navegação controlada
 
+    fun createUserProfile(user: FirebaseUser) {
+        val userId = user.uid
+        val userRef = db.collection("Utilizadores").document(userId)
+
+        // Dados do perfil que serão armazenados no Firestore
+        val userProfileData = mapOf(
+            "email" to (user.email ?: ""),
+            //"fullname" to (user.displayName ?: ""), // Você pode adicionar mais campos conforme necessário
+            //"profileImageUrl" to (user.photoUrl?.toString() ?: "")
+
+        )
+
+        // Cria o perfil do usuário no Firestore
+        userRef.set(userProfileData)
+            .addOnSuccessListener {
+                Log.i(SIGN_UP_TAG, "Perfil criado com sucesso no Firestore!")
+            }
+            .addOnFailureListener {
+                Log.e(SIGN_UP_TAG, "Erro ao criar o perfil no Firestore: ${it.message}")
+            }
+    }
 
     Column(
         modifier = Modifier
@@ -114,7 +137,11 @@ fun SignUpTela(
                     .addOnCompleteListener { task ->
                         if (task.isSuccessful) {
                             Log.i(SIGN_UP_TAG, "Sign up successful")
-                            auth.currentUser?.let { onSignUpSuccess(it) }
+                            auth.currentUser?.let { user ->
+                            createUserProfile(user)
+                            onSignUpSuccess(user)
+                            }
+
                         } else {
                             val error = task.exception?.localizedMessage ?: "Sign up failed"
                             Log.e(SIGN_UP_TAG, error)

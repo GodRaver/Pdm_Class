@@ -12,6 +12,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.firestore.FirebaseFirestore
 import pt.ipca.projetopdm.Components.CheckBoxComponent
 import pt.ipca.projetopdm.Components.UnderlineSignUpText
 import pt.ipca.projetopdm.R
@@ -29,9 +30,48 @@ fun LoginTelas(
     var password by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     val auth = FirebaseAuth.getInstance()
+    val db = FirebaseFirestore.getInstance()
     var isLoading by remember { mutableStateOf(false) } // Indicador de loading
     var isNavigating by remember { mutableStateOf(false) } // Flag para navegação controlada
 
+    fun createOrUpdateUserProfile(user: FirebaseUser) {
+        val userId = user.uid
+        val userRef = db.collection("Utilizadores").document(userId)
+
+        // Verifique se o perfil do usuário já existe no Firestore
+        userRef.get().addOnSuccessListener { document ->
+            if (document.exists()) {
+                // Se o perfil já existe, você pode atualizar os dados se necessário
+                val updatedData = mapOf(
+                    "email" to (user.email ?: ""), // Garante que o email será sempre uma string, mesmo que seja null
+                    //"fullname" to (user.displayName ?: ""), // Se o displayName for nulo, passa uma string vazia
+                    //"profileImageUrl" to (user.photoUrl?.toString() ?: "")
+                )
+                userRef.update(updatedData) // Atualiza o documento no Firestore
+                    .addOnSuccessListener {
+                        Log.i("LoginScreen", "Perfil atualizado com sucesso!")
+                    }
+                    .addOnFailureListener {
+                        Log.e("LoginScreen", "Erro ao atualizar o perfil: ${it.message}")
+                    }
+            } else {
+                // Se o perfil não existe, cria um novo documento
+                val newUserProfile = mapOf(
+                    "email" to (user.email ?: ""), // Garantir que o email seja sempre uma string
+                    "fullname" to (user.displayName ?: ""), // Garantir que o fullname seja sempre uma string
+                    "profileImageUrl" to (user.photoUrl?.toString() ?: ""), // Garantir que a URL da foto seja sempre uma string
+                    "address" to ""
+                )
+                userRef.set(newUserProfile) // Cria o perfil no Firestore
+                    .addOnSuccessListener {
+                        Log.i("LoginScreen", "Perfil criado com sucesso!")
+                    }
+                    .addOnFailureListener {
+                        Log.e("LoginScreen", "Erro ao criar perfil: ${it.message}")
+                    }
+            }
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -48,7 +88,9 @@ fun LoginTelas(
             value = email,
             onValueChange = { email = it },
             label = { Text("Email") },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -59,6 +101,7 @@ fun LoginTelas(
             label = { Text("Password") },
             visualTransformation = PasswordVisualTransformation(),
             modifier = Modifier.fillMaxWidth()
+
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -72,7 +115,11 @@ fun LoginTelas(
                         isLoading = false // Finaliza o estado de carregamento
                         if (task.isSuccessful) {
                             Log.i("LoginScreen", "Login successful")
-                            auth.currentUser?.let { onLoginSuccess(it) } // Chama o sucesso do login
+                            auth.currentUser?.let {
+
+                                onLoginSuccess(it)
+                                createOrUpdateUserProfile(it)
+                            } // Chama o sucesso do login
                         } else {
                             val error = task.exception?.localizedMessage ?: "Login failed"
                             Log.e("LoginScreen", error)
