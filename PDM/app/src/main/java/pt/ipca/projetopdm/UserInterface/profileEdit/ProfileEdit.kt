@@ -11,11 +11,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-//import androidx.compose.foundation.layout.ColumnScopeInstance.align
-//import androidx.compose.foundation.layout.ColumnScopeInstance.align
-//import androidx.compose.foundation.layout.ColumnScopeInstance.weight
 import androidx.compose.foundation.layout.Row
-//import androidx.compose.foundation.layout.BoxScopeInstance.align
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -69,6 +65,7 @@ const val REQUEST_CODE = 100
 
 val auth = FirebaseAuth.getInstance()
 val db = FirebaseFirestore.getInstance()
+//val profileImageUrl = remember { mutableStateOf("") }
 
 
 
@@ -106,18 +103,27 @@ fun ProfileEdit(
     val db = FirebaseFirestore.getInstance()
     val userProfile = remember { mutableStateOf<Map<String, String>>(emptyMap()) }
     val isLoading = remember { mutableStateOf(true) }
-    val profileImageUrl = remember { mutableStateOf("") }
+    //val profileImageUrl = remember { mutableStateOf("") }
     val userId = auth.currentUser?.uid ?: ""
 
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
         onResult = { uri ->
             Log.d("ProfileEdit", "URI selecionada: $uri")
+
+            val userId = auth.currentUser?.uid
+            Log.d("ProfileEdit", "User ID: $userId")  // Adicione um log para confirmar o UID
+            if (userId == null) {
+                Log.e("ProfileEdit", "Usuário não autenticado")
+                return@rememberLauncherForActivityResult // Se o usuário não estiver autenticado, retorna e não faz upload
+            }
+
             uri?.let {
                 uploadProfilePhoto(
                     context = context,
                     uri = it, // Passa diretamente o Uri
                     userId = userId,
+                    profileImageUrl = profileImageUrl,
                     onSuccess = { imageUrl ->
                         Log.d("ProfileEdit", "URL da imagem retornado: $imageUrl")
                         profileImageUrl.value = "$imageUrl?t=${System.currentTimeMillis()}"
@@ -361,6 +367,7 @@ fun uploadProfilePhoto(
     context: Context,
     uri: Uri,
     userId: String,
+    profileImageUrl: MutableState<String>,
     onSuccess: (String) -> Unit,
     onFailure: (Exception) -> Unit
 ) {
@@ -368,19 +375,26 @@ fun uploadProfilePhoto(
         val storageRef = FirebaseStorage.getInstance().reference
         val photoRef = storageRef.child("profile_photos/$userId/${System.currentTimeMillis()}.jpg")
 
+        Log.d("ProfileEdit", "Iniciando upload: $userId, Uri: $uri") // Log para debugar
+
+
         // Upload do arquivo
         val uploadTask = photoRef.putFile(uri)
 
         uploadTask.addOnSuccessListener {
             photoRef.downloadUrl.addOnSuccessListener { downloadUri ->
+                Log.d("ProfileEdit", "Imagem upload com sucesso: $downloadUri")
                 onSuccess(downloadUri.toString())
             }.addOnFailureListener { exception ->
+                Log.e("ProfileEdit", "Erro ao obter o URL da imagem", exception)
                 onFailure(exception)
             }
         }.addOnFailureListener { exception ->
+            Log.e("ProfileEdit", "Erro ao fazer upload da imagem", exception)
             onFailure(exception)
         }
     } catch (e: Exception) {
+        Log.e("ProfileEdit", "Erro no processo de upload", e)
         onFailure(e)
     }
 }

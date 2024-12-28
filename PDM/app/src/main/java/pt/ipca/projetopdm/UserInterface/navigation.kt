@@ -1,32 +1,33 @@
 package pt.ipca.projetopdm.UserInterface
 
-import android.net.Uri
+//import pt.ipca.projetopdm.app.PostOfficeApp
+//import pt.ipca.projetopdm.navigation.Screen
+//import pt.ipca.projetopdm.ui.detail.Detail
+//import pt.ipca.projetopdm.UserInterface.profileEdit.uploadProfileImage
 import android.util.Log
-import android.widget.Toast
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.platform.LocalContext
-import androidx.navigation.NavController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.google.firebase.auth.FirebaseAuth
 import pt.ipca.projetopdm.Telas.LoginTelas
 import pt.ipca.projetopdm.Telas.SignUpTela
 import pt.ipca.projetopdm.Telas.TermosCondicoesTela
-//import pt.ipca.projetopdm.app.PostOfficeApp
-//import pt.ipca.projetopdm.navigation.Screen
-//import pt.ipca.projetopdm.ui.detail.Detail
 import pt.ipca.projetopdm.UserInterface.home.HomeTela
 import pt.ipca.projetopdm.UserInterface.productsList.ProductsList
 import pt.ipca.projetopdm.UserInterface.profileEdit.ProfileEdit
-import pt.ipca.projetopdm.UserInterface.profileEdit.updateUserProfile
-//import pt.ipca.projetopdm.UserInterface.profileEdit.uploadProfileImage
-import pt.ipca.projetopdm.UserInterface.profileEdit.uploadProfilePhoto
+//import pt.ipca.projetopdm.UserInterface.profileEdit.profileImageUrl
+import pt.ipca.projetopdm.UserInterface.chat.Chat
+import pt.ipca.projetopdm.UserInterface.chat.ChatScreen
+import pt.ipca.projetopdm.UserInterface.chat.UserListPeopleScreen
+import android.net.Uri
 
 //import pt.ipca.projetopdm.UserInterface.home.HomeTela
 
@@ -36,7 +37,8 @@ enum class Routes {
     Detail,
     ProfileEdit,
     ProductsList,
-    teste
+    Chat,
+    UserListPeopleScreen
 }
 
 enum class AuthRoutes {
@@ -65,10 +67,14 @@ fun NavControllerNavigation(auth: FirebaseAuth) {
         }
     }
 
+    val profileImageUrl = remember { mutableStateOf("") }
+
     NavHost(
         navController = navController,
         startDestination = if (isAuthenticated) Routes.Home.name else AuthRoutes.Login.name
     ) {
+
+
         // Tela de Login
         composable(route = AuthRoutes.Login.name) {
             LoginTelas(
@@ -198,48 +204,91 @@ fun NavControllerNavigation(auth: FirebaseAuth) {
                     onEditClick = { field ->
                         Log.d("ProfileEdit", "Campo $field clicado")
                     },
-                    onPhotoSelected = { filePath ->
-                        val context = LocalContext.current
-                        filePath?.let { path ->
-                            val uri = Uri.parse(path)
-                            uploadProfilePhoto(
-                                context = context,
-                                uri = uri,
-                                userId = auth.currentUser?.uid ?: "",
-                                onSuccess = { photoUrl: String ->
-                                    updateUserProfile(
-                                        userId = auth.currentUser?.uid ?: "",
-                                        updatedFields = mapOf("photoUrl" to photoUrl),
-                                        onSuccess = {
-                                            Log.d("ProfileEdit", "Foto atualizada com sucesso!")
-                                            profileImageUrl.value = photoUrl
-                                        },
-                                        onFailure = { throwable: Throwable? ->
-                                            Log.e(
-                                                "ProfileEdit",
-                                                "Erro ao atualizar foto",
-                                                throwable
-                                            )
-                                        }
-                                    )
-                                },
-                                onFailure = { exception: Exception ->
-                                    Log.e(
-                                        "ProfileEdit",
-                                        "Erro ao fazer upload da foto",
-                                        exception
-                                    )
-                                }
-                            )
-                        }
-
-                    }
+                    onPhotoSelected = { newImageUrl -> profileImageUrl.value = newImageUrl},
+                    profileImageUrl = profileImageUrl
 
                 )
+
+
             }
 
         }
 
+
+        composable(route =  Routes.Chat.name) {
+
+
+            var isAuthenticated by remember { mutableStateOf(auth.currentUser != null) }
+
+            DisposableEffect(auth) {
+                Log.d(
+                    "AuthState",
+                    "Verificando autenticação. Utilizador atual: ${auth.currentUser?.email}"
+                )
+
+                // Adiciona um ouvinte para mudanças no estado de autenticação
+                val authStateListener = FirebaseAuth.AuthStateListener { firebaseAuth ->
+                    isAuthenticated = firebaseAuth.currentUser != null
+                    Log.d(
+                        "AuthState",
+                        "Novo estado de autenticação: ${firebaseAuth.currentUser?.email}"
+                    )
+                }
+
+                auth.addAuthStateListener(authStateListener)
+                onDispose {
+                    auth.removeAuthStateListener(authStateListener)
+                }
+            }
+
+            if (!isAuthenticated) {
+                Log.d("AuthState", "Usuário não autenticado. Navegando para Login...")
+                navController.navigate(AuthRoutes.Login.name) {
+                    // Garante que não voltaremos para a tela anterior após navegar para o login
+                    popUpTo(0)
+                    launchSingleTop = true
+                }
+            } else {
+                // Exibir a lista de e-mails
+                UserListPeopleScreen(navController = navController, auth = FirebaseAuth.getInstance())
+            }
+
+        }
+
+
+
+
+        composable(
+            "chat/{senderEmail}/{recipientEmail}",
+            arguments = listOf(
+                navArgument("senderEmail") { type = NavType.StringType },
+                navArgument("recipientEmail") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            //val senderEmail = backStackEntry.arguments?.getString("senderEmail") ?: ""
+            //val recipientEmail = backStackEntry.arguments?.getString("recipientEmail") ?: ""
+            val senderEmail = Uri.decode(backStackEntry.arguments?.getString("senderEmail") ?: "")
+            val recipientEmail = Uri.decode(backStackEntry.arguments?.getString("recipientEmail") ?: "")
+
+            // Passa os parâmetros para o ChatScreen
+
+            Log.d("ChatScreen", "Sender Email: $senderEmail, Recipient Email: $recipientEmail")
+
+
+            ChatScreen(
+                senderEmail = senderEmail,
+                recipientEmail = recipientEmail,
+                auth = FirebaseAuth.getInstance(),
+                onLogout = {
+                    FirebaseAuth.getInstance().signOut()
+                    navController.navigate(AuthRoutes.Login.name) {
+                        popUpTo(0) // Zera a pilha de navegação
+                        launchSingleTop = true
+                    }
+                },
+                navController = navController
+            )
+        }
 
 
 

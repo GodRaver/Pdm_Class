@@ -107,7 +107,15 @@ fun MenuGrid(navController: NavController) {
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            // Adicionar mais MenuItems aqui, se necessário
+            MenuItem(iconText = "📊", label = "Chat") {
+                Log.d("Navigation", "Navigating to Chat")
+                navController.navigate(Routes.Chat.name) // Navegação para a lista de produtos
+            }
+            MenuItem(iconText = "👤", label = "Profile Edit") {
+                Log.d("Navigation", "Navigating to Profile Edit")
+                navController.navigate(Routes.ProfileEdit.name) // Navegação para a edição de perfil
+            }
+
         }
         Spacer(modifier = Modifier.height(16.dp))
 
