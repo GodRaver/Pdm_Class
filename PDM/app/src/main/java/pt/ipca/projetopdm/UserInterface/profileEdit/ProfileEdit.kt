@@ -123,14 +123,12 @@ fun ProfileEdit(
                     context = context,
                     uri = it, // Passa diretamente o Uri
                     userId = userId,
-                    profileImageUrl = profileImageUrl,
+                    //profileImageUrl = profileImageUrl,
                     onSuccess = { imageUrl ->
                         Log.d("ProfileEdit", "URL da imagem retornado: $imageUrl")
+                        val updatedFields = mapOf("profileImageurl" to imageUrl)
                         profileImageUrl.value = "$imageUrl?t=${System.currentTimeMillis()}"
-                        saveProfileChanges(
-                            userId = userId,
-                            updatedFields = mapOf("profileImageUrl" to imageUrl)
-                        )
+                        saveProfileChanges(userId,updatedFields)
                         onPhotoSelected(imageUrl) // Atualiza callback
                     },
                     onFailure = { exception ->
@@ -175,7 +173,7 @@ fun ProfileEdit(
             ) {
                 val imagePainter = rememberAsyncImagePainter(
                     model = ImageRequest.Builder(LocalContext.current)
-                        .data(profileImageUrl.value)  // Inclui o timestamp ou qualquer valor único
+                        .data(profileImageUrl)  // Inclui o timestamp ou qualquer valor único
                         .build()
                 )
 
@@ -367,7 +365,7 @@ fun uploadProfilePhoto(
     context: Context,
     uri: Uri,
     userId: String,
-    profileImageUrl: MutableState<String>,
+    //profileImageUrl: MutableState<String>,
     onSuccess: (String) -> Unit,
     onFailure: (Exception) -> Unit
 ) {

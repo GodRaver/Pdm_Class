@@ -31,7 +31,10 @@ import androidx.compose.ui.graphics.Color
 import com.google.firebase.auth.FirebaseAuth
 //import pt.ipca.projetopdm.Screens.HomeScreen
 import androidx.compose.material.*
+import androidx.compose.material3.Icon
 import androidx.compose.material3.TopAppBar
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
@@ -39,6 +42,7 @@ import androidx.navigation.NavController
 import pt.ipca.projetopdm.UserInterface.AuthRoutes
 import pt.ipca.projetopdm.UserInterface.Routes
 import java.util.*
+import pt.ipca.projetopdm.R
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class)
@@ -91,12 +95,12 @@ fun MenuGrid(navController: NavController) {
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            MenuItem(iconText = "📊", label = "Products List") {
+            MenuItem(icon = painterResource(id = R.drawable.productlist), label = "Products List") {
                 Log.d("Navigation", "Navigating to Products List")
                 navController.navigate(Routes.ProductsList.name) // Navegação para a lista de produtos
             }
-            MenuItem(iconText = "👤", label = "Profile Edit") {
-                Log.d("Navigation", "Navigating to Profile Edit")
+            MenuItem(icon = painterResource(id = R.drawable.news), label = "News") {
+                Log.d("Navigation", "Navigating to News")
                 navController.navigate(Routes.ProfileEdit.name) // Navegação para a edição de perfil
             }
         }
@@ -107,11 +111,11 @@ fun MenuGrid(navController: NavController) {
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            MenuItem(iconText = "📊", label = "Chat") {
+            MenuItem(painterResource(id = R.drawable.chat), label = "Chat") {
                 Log.d("Navigation", "Navigating to Chat")
                 navController.navigate(Routes.Chat.name) // Navegação para a lista de produtos
             }
-            MenuItem(iconText = "👤", label = "Profile Edit") {
+            MenuItem(icon = painterResource(id = R.drawable.profileedit), label = "Profile Edit") {
                 Log.d("Navigation", "Navigating to Profile Edit")
                 navController.navigate(Routes.ProfileEdit.name) // Navegação para a edição de perfil
             }
@@ -130,7 +134,7 @@ fun MenuGrid(navController: NavController) {
 }
 
 @Composable
-fun MenuItem(iconText: String, label: String, onClick: () -> Unit) {
+fun MenuItem(icon: Painter, label: String, onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .size(120.dp)
@@ -142,10 +146,11 @@ fun MenuItem(iconText: String, label: String, onClick: () -> Unit) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = iconText,
-                fontSize = 36.sp,
-                textAlign = TextAlign.Center
+            Icon(
+                painter = icon,
+                contentDescription = null,
+                modifier = Modifier.size(48.dp),
+                tint = Color.Unspecified
             )
             Text(
                 text = label,

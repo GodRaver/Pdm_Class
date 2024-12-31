@@ -14,10 +14,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
+import dagger.hilt.android.AndroidEntryPoint
 import pt.ipca.projetopdm.UserInterface.NavControllerNavigation
 import pt.ipca.projetopdm.app.AutenticacaoApp
 import pt.ipca.projetopdm.ui.theme.ProjetoPDMTheme
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     private lateinit var auth: FirebaseAuth

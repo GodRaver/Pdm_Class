@@ -15,8 +15,8 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.*
 import android.content.Context
-
-
+import android.net.Uri
+import com.google.firebase.storage.FirebaseStorage
 
 
 fun updateUserProfile(userId: String, updatedFields: Map<String, Any>, onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
@@ -55,9 +55,9 @@ fun loadUserProfile(auth: FirebaseAuth, db: FirebaseFirestore, onProfileLoaded: 
 
 
 fun saveProfileChanges(userId: String, updatedFields: Map<String, Any>) {
-    val db = FirebaseFirestore.getInstance()
+    val userDocRef = FirebaseFirestore.getInstance().collection("Utilizadores").document(userId)
 
-    db.collection("Utilizadores").document(userId)
+    userDocRef
         .update(updatedFields)
         .addOnSuccessListener {
             Log.d("Firestore", "Perfil atualizado com sucesso!")
@@ -79,9 +79,9 @@ fun updateEmail(
     val user = FirebaseAuth.getInstance().currentUser
 
     if (user == null) {
-        Log.e("ProfileEdit", "Usuário não autenticado")
+        Log.e("ProfileEdit", "Utilizador não autenticado")
         Toast.makeText(context, "Você precisa estar autenticado para alterar o e-mail", Toast.LENGTH_SHORT).show()
-        onFailure(Exception("Usuário não autenticado"))
+        onFailure(Exception("Utilizador não autenticado"))
         return
     }
 
@@ -90,7 +90,6 @@ fun updateEmail(
         Log.d("ProfileEdit", "E-mail verificado, pode ser alterado")
     } else {
         Log.e("ProfileEdit", "E-mail não verificado")
-        // Exiba uma mensagem para o usuário verificar o e-mail
         Toast.makeText(context, "Por favor, verifique seu e-mail antes de alterar.", Toast.LENGTH_SHORT).show()
         onFailure(Exception("E-mail não verificado"))
         return
@@ -105,7 +104,6 @@ fun updateEmail(
 
     if (!isExternalProvider) {
         Log.e("ProfileEdit", "o problema não é o external Provider.")
-        // Lidar com essa situação (informar o usuário, por exemplo)
         Toast.makeText(context, "nao é esse o problema.", Toast.LENGTH_SHORT).show()
         onFailure(Exception("Email vinculado a provedor externo"))
         return
@@ -157,4 +155,78 @@ fun updatePassword(
         }
 }
 
+fun uploadImageToStorage(userId: String, imageUri: Uri, onSuccess: (String) -> Unit, onFailure: (Exception) -> Unit) {
+    val storageRef = FirebaseStorage.getInstance().reference.child("profile_photos/$userId.jpg")
 
+    storageRef.putFile(imageUri)
+        .addOnSuccessListener { taskSnapshot ->
+            storageRef.downloadUrl.addOnSuccessListener { uri ->
+                val imageUrl = uri.toString()
+                onSuccess(imageUrl) // URL da imagem
+            }
+        }
+        .addOnFailureListener { exception ->
+            onFailure(exception) // Falha no upload
+        }
+}
+
+fun saveUserProfileImage(userId: String, imageUrl: String, onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
+    val db = FirebaseFirestore.getInstance()
+    db.collection("Utilizadores").document(userId)
+        .update("profileImageUrl", imageUrl)
+        .addOnSuccessListener {
+            onSuccess() // Sucesso na atualização
+        }
+        .addOnFailureListener { e ->
+            onFailure(e) // Falha na atualização
+        }
+}
+
+fun handleProfileImageUpdate(userId: String, imageUri: Uri, onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
+    uploadImageToStorage(userId, imageUri, { imageUrl ->
+        saveUserProfileImage(userId, imageUrl, onSuccess, onFailure)
+    }, { exception ->
+        onFailure(exception) // Falha no upload da imagem
+    })
+}
+
+/*
+
+fun uploadImageToStorage(userId: String, imageUri: Uri, onSuccess: (String) -> Unit, onFailure: (Exception) -> Unit) {
+    val storageRef = FirebaseStorage.getInstance().reference.child("user_images/$userId/profile.jpg")
+
+    storageRef.putFile(imageUri)
+        .addOnSuccessListener {
+            storageRef.downloadUrl.addOnSuccessListener { uri ->
+                val imageUrl = uri.toString()
+                onSuccess(imageUrl) // Retorna a URL da imagem
+            }
+        }
+        .addOnFailureListener { exception ->
+            onFailure(exception) // Falha no upload
+        }
+}
+ */
+
+
+
+fun updateUserImage(userId: String, imageUrl: String, onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
+    val db = FirebaseFirestore.getInstance()
+
+    db.collection("Utilizadores").document(userId)
+        .update("profileImageUrl", imageUrl)
+        .addOnSuccessListener {
+            onSuccess() // Sucesso ao atualizar
+        }
+        .addOnFailureListener { e ->
+            onFailure(e) // Falha ao salvar a URL
+        }
+}
+
+fun uploadAndSaveUserImage(userId: String, imageUri: Uri, onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
+    uploadImageToStorage(userId, imageUri, { imageUrl ->
+        updateUserImage(userId, imageUrl, onSuccess, onFailure)
+    }, { exception ->
+        onFailure(exception) // Falha no upload
+    })
+}

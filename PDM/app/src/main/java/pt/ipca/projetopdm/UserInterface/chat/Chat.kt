@@ -27,6 +27,12 @@ import com.google.firebase.firestore.FirebaseFirestore
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
@@ -35,6 +41,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.tooling.preview.Preview
@@ -49,6 +56,9 @@ import pt.ipca.projetopdm.UserInterface.AuthRoutes
 import pt.ipca.projetopdm.UserInterface.Routes
 import pt.ipca.projetopdm.UserInterface.profileEdit.auth
 import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseUser
@@ -118,8 +128,14 @@ fun UserListPeopleScreen(navController: NavController, auth : FirebaseAuth) {
         Log.d("UserListScreen", "Iniciando carregamento dos utilizadores...")
         getUsersFromFirestore { userList ->
             Log.d("UserListScreen", "Usuários recuperados: $userList")
+            val currentUserEmail = auth.currentUser?.email
+            if(currentUserEmail != null) {
 
-            users.value = userList
+                val filteredUserList = userList.filter {it != currentUserEmail}
+                users.value = filteredUserList
+            } else {
+                users.value = userList
+            }
         }
     }
 
@@ -206,7 +222,7 @@ fun ChatScreen(
 ) {
 
 
-
+    val database = FirebaseDatabase.getInstance("https://socialstore-app-pdm-default-rtdb.europe-west1.firebasedatabase.app")
     var isAuthenticated by remember { mutableStateOf(auth.currentUser != null) }
 
     DisposableEffect(auth) {
@@ -235,19 +251,26 @@ fun ChatScreen(
 
 
     // Estado para as mensagens e para o texto digitado
-    val messages = remember { mutableStateOf<List<String>>(emptyList()) }
+    val messages = remember { mutableStateListOf<Pair<String,Boolean>>() }
     val newMessage = remember { mutableStateOf("") }
     val currentUserEmail = auth.currentUser?.email ?: ""
 
     // Carregar as mensagens quando a tela é aberta (isso pode ser feito com Firebase)
-    //LaunchedEffect(Unit) {
-    //    getMessagesFromDatabase(currentUserEmail, recipientEmail) { retrievedMessages ->
-    //        messages.value = retrievedMessages
-    //    }
-    //}
+    LaunchedEffect(currentUserEmail, recipientEmail) {
+        val safeSenderEmail = currentUserEmail.replace("[^a-zA-Z0-9_]".toRegex(), "_")
+        val safeRecipientEmail = recipientEmail.replace("[^a-zA-Z0-9_]".toRegex(), "_")
+        getMessagesFromDatabase(safeSenderEmail, safeRecipientEmail) { retrievedMessages ->
+            Log.d("ChatScreen", "Mensagens recuperadas: $retrievedMessages")
+            messages.clear()
+            messages.addAll(retrievedMessages)
+            }
+    }
 
     Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp)
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState())
     ) {
         // TopBar com o e-mail do destinatário
         TopAppBar(
@@ -256,22 +279,43 @@ fun ChatScreen(
                 IconButton(onClick = { navController.popBackStack() }) {
                     Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                 }
-            }
+            },
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = Color(0x8000FF00), // Verde translúcido
+                titleContentColor = Color.White, // Cor do título
+            ),
+            modifier = Modifier.fillMaxWidth()
         )
 
         // Área de mensagens
         LazyColumn(
             modifier = Modifier.weight(1f),
-            reverseLayout = true // Para mostrar a mensagem mais recente na parte inferior
+            reverseLayout = false // Para mostrar a mensagem mais recente na parte superior
         ) {
-            items(messages.value) { message ->
-                Text(
-                    text = message,
-                    style = MaterialTheme.typography.bodyMedium,
+            items(messages) { message ->
+                val (messageContent, isSender) = message
+                Row(
+                    horizontalArrangement = if (isSender) Arrangement.End else Arrangement.Start,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 8.dp)
-                )
+                ) {
+                    Box(
+                        contentAlignment = if (isSender) Alignment.CenterEnd else Alignment.CenterStart,
+                        modifier = Modifier
+                            .background(
+                                if (isSender) Color.Blue else Color.LightGray,
+                                shape = RoundedCornerShape(16.dp)
+                            )
+                            .padding(12.dp)
+                    ) {
+                        Text(
+                            text = messageContent,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.White
+                        )
+                    }
+                }
             }
         }
 
@@ -288,10 +332,15 @@ fun ChatScreen(
         Button(
             onClick = {
                 sendMessageToDatabase(currentUserEmail, recipientEmail, newMessage.value)
-                messages.value = listOf(newMessage.value) + messages.value // Adiciona a mensagem enviada à lista
-                newMessage.value = "" // Limpa o campo de texto
+                if(newMessage.value.isNotBlank()) {
+
+                    messages.add(0, newMessage.value to true)
+                    newMessage.value = ""
+                }
             },
-            modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp)
         ) {
             Text("Enviar")
         }
@@ -299,7 +348,16 @@ fun ChatScreen(
 
     //Text(text = "teste")
 
+
+
 }
+
+data class Message(
+
+    val content: String,
+    val isSender: Boolean,
+    val timestamp: Long
+)
 
 fun sendMessageToDatabase(senderEmail: String, recipientEmail: String, message: String) {
 
@@ -307,10 +365,9 @@ fun sendMessageToDatabase(senderEmail: String, recipientEmail: String, message: 
     val safeRecipientEmail = recipientEmail.replace("[^a-zA-Z0-9_]".toRegex(), "_")
 
 
-    val database = FirebaseDatabase.getInstance()
+    val database = FirebaseDatabase.getInstance("https://socialstore-app-pdm-default-rtdb.europe-west1.firebasedatabase.app")
     val ref = database.getReference("chats")
 
-    // Crie um novo chat, usando o e-mail do remetente e do destinatário
     val chatRef = ref.child(safeSenderEmail).child(safeRecipientEmail)
 
     // Crie a mensagem com um timestamp
@@ -332,22 +389,52 @@ fun sendMessageToDatabase(senderEmail: String, recipientEmail: String, message: 
     }
 }
 
-fun getMessagesFromDatabase(senderEmail: String, recipientEmail: String, onResult: (List<String>) -> Unit) {
-    val database = FirebaseDatabase.getInstance()
+fun getMessagesFromDatabase(senderEmail: String, recipientEmail: String, onResult: (List<Pair<String, Boolean>>) -> Unit) {
+    val database = FirebaseDatabase.getInstance("https://socialstore-app-pdm-default-rtdb.europe-west1.firebasedatabase.app")
     val ref = database.getReference("chats")
 
-    // Referência para o chat entre remetente e destinatário
-    val chatRef = ref.child(senderEmail).child(recipientEmail)
+    val safeSenderEmail = senderEmail.replace("[^a-zA-Z0-9_]".toRegex(), "_")
+    val safeRecipientEmail = recipientEmail.replace("[^a-zA-Z0-9_]".toRegex(), "_")
 
-    // Recupera as mensagens
-    chatRef.orderByChild("timestamp").addValueEventListener(object : ValueEventListener {
+    // Referência para o chat entre remetente e destinatário
+    val allMessages = mutableListOf<Message>()
+
+    // Listener para buscar mensagens de sender -> recipient
+    val senderToRecipientRef = ref.child(safeSenderEmail).child(safeRecipientEmail)
+    senderToRecipientRef.addListenerForSingleValueEvent(object : ValueEventListener {
         override fun onDataChange(snapshot: DataSnapshot) {
-            val messages = mutableListOf<String>()
-            for (messageSnapshot in snapshot.children) {
-                val message = messageSnapshot.child("message").getValue(String::class.java)
-                message?.let { messages.add(it) }
+            snapshot.children.forEach {
+                val message = it.child("message").getValue(String::class.java)
+                val timestamp = it.child("timestamp").getValue(Long::class.java)
+                if (message != null && timestamp != null) {
+                    allMessages.add(Message(message,true,timestamp))
+                }
             }
-            onResult(messages)
+
+            // Listener para buscar mensagens de recipient -> sender
+            val recipientToSenderRef = ref.child(safeRecipientEmail).child(safeSenderEmail)
+            recipientToSenderRef.addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    snapshot.children.forEach {
+                        val message = it.child("message").getValue(String::class.java)
+                        val timestamp = it.child("timestamp").getValue(Long::class.java)
+                        if (message != null && timestamp != null) {
+                            allMessages.add(Message(message,false,timestamp))
+                        }
+                    }
+
+                    // Ordenar todas as mensagens pelo timestamp
+                    allMessages.sortBy { it.timestamp }
+
+                    val mappedMessages = allMessages.map {it.content to it.isSender}
+                    onResult(mappedMessages)
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e("Firebase", "Erro ao recuperar mensagens", error.toException())
+                    onResult(emptyList())
+                }
+            })
         }
 
         override fun onCancelled(error: DatabaseError) {
@@ -355,6 +442,7 @@ fun getMessagesFromDatabase(senderEmail: String, recipientEmail: String, onResul
             onResult(emptyList())
         }
     })
+
 }
 
 //_--------------------------------------- teste renderizaçao nao funciona, serviço que nao podem ser simulados pelo preview??

@@ -28,6 +28,7 @@ import pt.ipca.projetopdm.UserInterface.chat.Chat
 import pt.ipca.projetopdm.UserInterface.chat.ChatScreen
 import pt.ipca.projetopdm.UserInterface.chat.UserListPeopleScreen
 import android.net.Uri
+import pt.ipca.projetopdm.UserInterface.news.News
 
 //import pt.ipca.projetopdm.UserInterface.home.HomeTela
 
@@ -38,7 +39,8 @@ enum class Routes {
     ProfileEdit,
     ProductsList,
     Chat,
-    UserListPeopleScreen
+    UserListPeopleScreen,
+    News
 }
 
 enum class AuthRoutes {
@@ -291,7 +293,45 @@ fun NavControllerNavigation(auth: FirebaseAuth) {
         }
 
 
+        composable(route =  Routes.News.name) {
 
+
+            var isAuthenticated by remember { mutableStateOf(auth.currentUser != null) }
+
+            DisposableEffect(auth) {
+                Log.d(
+                    "AuthState",
+                    "Verificando autenticação. Utilizador atual: ${auth.currentUser?.email}"
+                )
+
+                // Adiciona um ouvinte para mudanças no estado de autenticação
+                val authStateListener = FirebaseAuth.AuthStateListener { firebaseAuth ->
+                    isAuthenticated = firebaseAuth.currentUser != null
+                    Log.d(
+                        "AuthState",
+                        "Novo estado de autenticação: ${firebaseAuth.currentUser?.email}"
+                    )
+                }
+
+                auth.addAuthStateListener(authStateListener)
+                onDispose {
+                    auth.removeAuthStateListener(authStateListener)
+                }
+            }
+
+            if (!isAuthenticated) {
+                Log.d("AuthState", "Usuário não autenticado. Navegando para Login...")
+                navController.navigate(AuthRoutes.Login.name) {
+                    // Garante que não voltaremos para a tela anterior após navegar para o login
+                    popUpTo(0)
+                    launchSingleTop = true
+                }
+            } else {
+                // Exibir noticias
+                News(navController = navController, auth = FirebaseAuth.getInstance())
+            }
+
+        }
 
 
         composable(route = Routes.ProductsList.name) {
