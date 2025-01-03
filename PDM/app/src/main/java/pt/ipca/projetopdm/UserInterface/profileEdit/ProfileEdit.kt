@@ -58,7 +58,8 @@ import androidx.compose.runtime.MutableState
 import coil3.request.ImageRequest
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-
+import coil.compose.rememberImagePainter
+import coil3.compose.AsyncImage
 
 
 const val REQUEST_CODE = 100
@@ -128,7 +129,8 @@ fun ProfileEdit(
                         Log.d("ProfileEdit", "URL da imagem retornado: $imageUrl")
                         val updatedFields = mapOf("profileImageurl" to imageUrl)
                         profileImageUrl.value = "$imageUrl?t=${System.currentTimeMillis()}"
-                        saveProfileChanges(userId,updatedFields)
+                        Log.d("ProfileEdit", "profileImageUrl.value atualizado: ${profileImageUrl.value}")
+                        saveProfileChanges(userId, updatedFields)
                         onPhotoSelected(imageUrl) // Atualiza callback
                     },
                     onFailure = { exception ->
@@ -146,6 +148,10 @@ fun ProfileEdit(
             profileImageUrl.value = profile["profileImageUrl"] ?: ""
             isLoading.value = false
         }
+    }
+
+    LaunchedEffect(profileImageUrl.value) {
+        Log.d("ProfileEdit", "imagem altera: ${profileImageUrl.value}")
     }
 
     Surface(
@@ -171,16 +177,14 @@ fun ProfileEdit(
                     .clip(CircleShape)
                     .background(Color.Gray)
             ) {
-                val imagePainter = rememberAsyncImagePainter(
-                    model = ImageRequest.Builder(LocalContext.current)
-                        .data(profileImageUrl)  // Inclui o timestamp ou qualquer valor único
-                        .build()
-                )
+                Log.d("ProfileEdit", "URL da imagem passada para AsyncImage: ${profileImageUrl.value}")
 
-                Image(
-                    painter = imagePainter,
+                AsyncImage(   //--------------------------------------------------------------------------------
+                    model = profileImageUrl.value,
                     contentDescription = "Foto de Perfil",
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize(),
+                    placeholder = painterResource(R.drawable.wait), // Exibir imagem de placeholder enquanto carrega
+                    error = painterResource(R.drawable.error) // Exibir uma imagem de erro se falhar
                 )
 
                 IconButton(
@@ -206,7 +210,8 @@ fun ProfileEdit(
                 "address" to (userProfile.value["address"] ?: ""),
                 "password" to (userProfile.value["password"] ?: ""),
                 "newEmail" to (userProfile.value["newEmail"] ?: ""), // Adicionar campo newEmail
-                "newPassword" to (userProfile.value["newPassword"] ?: "") // Adicionar campo newPassword
+                "newPassword" to (userProfile.value["newPassword"]
+                    ?: "") // Adicionar campo newPassword
 
 
             )
@@ -245,11 +250,23 @@ fun ProfileEdit(
                             newPassword = newPassword,
                             onSuccess = {
                                 Log.d("ProfileEdit", "Senha atualizada com sucesso.")
-                                Toast.makeText(context, "Senha atualizada com sucesso", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(
+                                    context,
+                                    "Senha atualizada com sucesso",
+                                    Toast.LENGTH_SHORT
+                                ).show()
                             },
                             onFailure = { error ->
-                                Log.e("ProfileEdit", "Erro ao atualizar a password: ${error.message}", error)
-                                Toast.makeText(context, "Erro update password: ${error.message}", Toast.LENGTH_LONG).show()
+                                Log.e(
+                                    "ProfileEdit",
+                                    "Erro ao atualizar a password: ${error.message}",
+                                    error
+                                )
+                                Toast.makeText(
+                                    context,
+                                    "Erro update password: ${error.message}",
+                                    Toast.LENGTH_LONG
+                                ).show()
                             }
 
                         )
@@ -266,16 +283,27 @@ fun ProfileEdit(
                             newEmail = newEmail,
                             onSuccess = {
                                 Log.d("ProfileEdit", "Email atualizado com sucesso.")
-                                Toast.makeText(context, "Email atualizado com sucesso", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(
+                                    context,
+                                    "Email atualizado com sucesso",
+                                    Toast.LENGTH_SHORT
+                                ).show()
                             },
                             onFailure = { error ->
-                                Log.e("ProfileEdit", "Erro ao atualizar o e-mail: ${error.message}", error)
-                                Toast.makeText(context, "Erro update email: ${error.message}", Toast.LENGTH_LONG).show()
+                                Log.e(
+                                    "ProfileEdit",
+                                    "Erro ao atualizar o e-mail: ${error.message}",
+                                    error
+                                )
+                                Toast.makeText(
+                                    context,
+                                    "Erro update email: ${error.message}",
+                                    Toast.LENGTH_LONG
+                                ).show()
                             }
 
                         )
                     }
-
 
 
                     // Atualizar a senha se ela foi alterada
@@ -287,7 +315,8 @@ fun ProfileEdit(
 
 
                     )
-                    Toast.makeText(context, "Alterações salvas com sucesso", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Alterações salvas com sucesso", Toast.LENGTH_SHORT)
+                        .show()
                     Log.d("ProfileEdit", "Conteúdo do userProfile: ${userProfile.value}")
                 },
                 modifier = Modifier.padding(top = 16.dp)
@@ -295,149 +324,150 @@ fun ProfileEdit(
                 Text("Salvar Alterações")
             }
 
-
         }
     }
 }
 
 
-@Composable
-fun EditableFieldWithTextField(label: String, initialValue: String, onValueChange: (String) -> Unit) {
-    var textValue by remember { mutableStateOf(initialValue) }
-
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 2.dp)
+    @Composable
+    fun EditableFieldWithTextField(
+        label: String,
+        initialValue: String,
+        onValueChange: (String) -> Unit
     ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
-        TextField(
-            value = textValue,
-            onValueChange = {
-                textValue = it // Atualiza o valor local
-                onValueChange(it) // Atualiza o valor global
-            },
+        var textValue by remember { mutableStateOf(initialValue) }
+
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Color.White, MaterialTheme.shapes.medium)
-                .height(80.dp), // A altura foi ajustada para ser mais apropriada para o TextField
-            singleLine = true
-        )
-    }
-}
-
-
-
-/*
-fun uploadProfilePhoto(
-    filePath: String, // URI do arquivo selecionado
-    userId: String, // ID do usuário autenticado
-    onSuccess: (String) -> Unit, // Callback para retorno da URL da foto
-    onFailure: (Exception) -> Unit // Callback para erros
-) {
-    val storageRef = FirebaseStorage.getInstance().reference.child("")
-    val photoRef = storageRef.child("profile_photos/$userId.jpg")
-
-    // Converter o caminho do arquivo para URI
-    val fileUri = Uri.parse(filePath)
-
-
-    val uploadTask = storageRef.putFile(Uri.parse(filePath))
-    uploadTask.addOnSuccessListener {
-        // Recuperar a URL da imagem armazenada
-        storageRef.downloadUrl.addOnSuccessListener { uri ->
-            onSuccess(uri.toString())
-        }.addOnFailureListener { exception ->
-            onFailure(exception)
+                .padding(horizontal = 2.dp)
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            TextField(
+                value = textValue,
+                onValueChange = {
+                    textValue = it // Atualiza o valor local
+                    onValueChange(it) // Atualiza o valor global
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.White, MaterialTheme.shapes.medium)
+                    .height(80.dp), // A altura foi ajustada para ser mais apropriada para o TextField
+                singleLine = true
+            )
         }
-    }.addOnFailureListener { exception ->
-        onFailure(exception)
     }
-}
- */
 
 
-fun uploadProfilePhoto(
-    context: Context,
-    uri: Uri,
-    userId: String,
-    //profileImageUrl: MutableState<String>,
-    onSuccess: (String) -> Unit,
-    onFailure: (Exception) -> Unit
-) {
-    try {
-        val storageRef = FirebaseStorage.getInstance().reference
-        val photoRef = storageRef.child("profile_photos/$userId/${System.currentTimeMillis()}.jpg")
+    fun uploadProfilePhoto(
+        context: Context,
+        uri: Uri,
+        userId: String,
+        //profileImageUrl: MutableState<String>,
+        onSuccess: (String) -> Unit,
+        onFailure: (Exception) -> Unit
+    ) {
+        try {
+            val storageRef = FirebaseStorage.getInstance().reference
+            val photoRef =
+                storageRef.child("profile_photos/$userId/${System.currentTimeMillis()}.jpg")
 
-        Log.d("ProfileEdit", "Iniciando upload: $userId, Uri: $uri") // Log para debugar
+            Log.d("ProfileEdit", "Iniciando upload: $userId, Uri: $uri") // Log para debugar
 
 
-        // Upload do arquivo
-        val uploadTask = photoRef.putFile(uri)
+            // Upload do arquivo
+            val uploadTask = photoRef.putFile(uri)
 
-        uploadTask.addOnSuccessListener {
-            photoRef.downloadUrl.addOnSuccessListener { downloadUri ->
-                Log.d("ProfileEdit", "Imagem upload com sucesso: $downloadUri")
-                onSuccess(downloadUri.toString())
+            uploadTask.addOnSuccessListener {
+                photoRef.downloadUrl.addOnSuccessListener { downloadUri ->
+                    Log.d("ProfileEdit", "Imagem upload com sucesso: $downloadUri")
+                    onSuccess(downloadUri.toString())
+                }.addOnFailureListener { exception ->
+                    Log.e("ProfileEdit", "Erro ao obter o URL da imagem", exception)
+                    onFailure(exception)
+                }
             }.addOnFailureListener { exception ->
-                Log.e("ProfileEdit", "Erro ao obter o URL da imagem", exception)
+                Log.e("ProfileEdit", "Erro ao fazer upload da imagem", exception)
                 onFailure(exception)
             }
-        }.addOnFailureListener { exception ->
-            Log.e("ProfileEdit", "Erro ao fazer upload da imagem", exception)
-            onFailure(exception)
+        } catch (e: Exception) {
+            Log.e("ProfileEdit", "Erro no processo de upload", e)
+            onFailure(e)
         }
-    } catch (e: Exception) {
-        Log.e("ProfileEdit", "Erro no processo de upload", e)
-        onFailure(e)
     }
-}
 
 
+    @Composable
+    fun ProfileFields(userProfile: MutableState<Map<String, String>>) {
+        // Lista de campos e valores para o formulário
+        val fields = listOf(
+            "fullName" to (userProfile.value["fullname"] ?: ""),
+            "email" to (userProfile.value["email"] ?: ""),
+            "address" to (userProfile.value["address"] ?: ""),
+            "password" to (userProfile.value["password"] ?: "")
+        )
 
-@Composable
-fun ProfileFields(userProfile: MutableState<Map<String, String>>) {
-    // Lista de campos e valores para o formulário
-    val fields = listOf(
-        "fullName" to (userProfile.value["fullname"] ?: ""),
-        "email" to (userProfile.value["email"] ?: ""),
-        "address" to (userProfile.value["address"] ?: ""),
-        "password" to (userProfile.value["password"] ?: "")
-    )
+        fields.forEach { (label, value) ->
+            EditableFieldWithTextField(
+                label = label,
+                initialValue = value,
+                onValueChange = { updatedValue ->
+                    userProfile.value = userProfile.value.toMutableMap().apply {
+                        this[label] = updatedValue // Atualiza o valor no mapa
+                    }
+                }
+            )
+        }
+    }
 
-    fields.forEach { (label, value) ->
-        EditableFieldWithTextField(
-            label = label,
-            initialValue = value,
-            onValueChange = { updatedValue ->
-                userProfile.value = userProfile.value.toMutableMap().apply {
-                    this[label] = updatedValue // Atualiza o valor no mapa
+
+    fun normalizeKeys(fields: Map<String, String>): Map<String, String> {
+        return fields.mapKeys { it.key.lowercase() }
+    }
+
+    fun getFileFromUri(context: Context, uri: Uri): String? {
+        context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+            if (cursor.moveToFirst()) {
+                val columnIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                if (columnIndex != -1) {
+                    return cursor.getString(columnIndex)
                 }
             }
-        )
+        }
+        return null
     }
-}
 
 
-fun normalizeKeys(fields: Map<String, String>): Map<String, String> {
-    return fields.mapKeys { it.key.lowercase() }
-}
-
-fun getFileFromUri(context: Context, uri: Uri): String? {
-    context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
-        if (cursor.moveToFirst()) {
-            val columnIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-            if (columnIndex != -1) {
-                return cursor.getString(columnIndex)
+    @Composable
+    fun ProfileImage() {
+        val imageUrl = "https://picsum.photos/200/300"  // URL de exemplo de Picsum
+        val painter = rememberImagePainter(
+            imageUrl,
+            builder = {
+                crossfade(true)  // Habilita o efeito de transição ao carregar
+                error(R.drawable.error)  // Imagem de erro
+                placeholder(R.drawable.wait)  // Imagem de placeholder enquanto carrega
             }
+        )
+
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .size(120.dp)  // Define o tamanho da imagem
+                .clip(CircleShape)  // Corta a imagem para ficar circular
+                .background(Color.Gray)  // Fundo cinza caso a imagem não carregue
+        ) {
+            Image(
+                painter = painter,
+                contentDescription = "Foto de Perfil",
+                modifier = Modifier.fillMaxSize()  // A imagem ocupa todo o espaço disponível
+            )
         }
     }
-    return null
-}
 
 
 
@@ -493,6 +523,34 @@ fun createOrUpdateUserProfile() {
         }
     } else {
         println("Nenhum usuário autenticado.")
+    }
+}
+ */
+
+/*
+fun uploadProfilePhoto(
+    filePath: String, // URI do arquivo selecionado
+    userId: String, // ID do usuário autenticado
+    onSuccess: (String) -> Unit, // Callback para retorno da URL da foto
+    onFailure: (Exception) -> Unit // Callback para erros
+) {
+    val storageRef = FirebaseStorage.getInstance().reference.child("")
+    val photoRef = storageRef.child("profile_photos/$userId.jpg")
+
+    // Converter o caminho do arquivo para URI
+    val fileUri = Uri.parse(filePath)
+
+
+    val uploadTask = storageRef.putFile(Uri.parse(filePath))
+    uploadTask.addOnSuccessListener {
+        // Recuperar a URL da imagem armazenada
+        storageRef.downloadUrl.addOnSuccessListener { uri ->
+            onSuccess(uri.toString())
+        }.addOnFailureListener { exception ->
+            onFailure(exception)
+        }
+    }.addOnFailureListener { exception ->
+        onFailure(exception)
     }
 }
  */

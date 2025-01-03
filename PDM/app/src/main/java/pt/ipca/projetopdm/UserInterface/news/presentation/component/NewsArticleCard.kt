@@ -20,7 +20,7 @@ import androidx.compose.ui.unit.dp
 import pt.ipca.projetopdm.UserInterface.news.domain.Model.Data
 import pt.ipca.projetopdm.UserInterface.news.util.DateFormatter
 
-/*
+
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -51,7 +51,7 @@ fun NewsArticleCard(
 
             modifier = modifier.padding(12.dp)
         ) {
-            ImageHolder(ImageUrl = data.similar.firstOrNull()?.url ?: "")   //     ------
+            ImageHolder(imageUrl = data.imageUrl)   //     ------
             Text(
 
                 text = data.title,
@@ -86,4 +86,3 @@ fun NewsArticleCard(
 
 }
 
- */

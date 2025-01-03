@@ -22,11 +22,11 @@ fun ImageHolder(
     modifier: Modifier = Modifier
 ){
 
-    val imageUrlToLoad = ImageUrl ?: "default_image_url"
+    val imageUrlToLoad = imageUrl ?: "default_image_url"
 
     AsyncImage(model = ImageRequest
         .Builder(LocalContext.current)
-        .data(ImageUrl)
+        .data(imageUrlToLoad)
         .crossfade(true)
         .build(),
         contentDescription = "image",

@@ -4,6 +4,7 @@ package pt.ipca.projetopdm.UserInterface
 //import pt.ipca.projetopdm.navigation.Screen
 //import pt.ipca.projetopdm.ui.detail.Detail
 //import pt.ipca.projetopdm.UserInterface.profileEdit.uploadProfileImage
+import android.app.Application
 import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -28,7 +29,19 @@ import pt.ipca.projetopdm.UserInterface.chat.Chat
 import pt.ipca.projetopdm.UserInterface.chat.ChatScreen
 import pt.ipca.projetopdm.UserInterface.chat.UserListPeopleScreen
 import android.net.Uri
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.room.Room
 import pt.ipca.projetopdm.UserInterface.news.News
+import pt.ipca.projetopdm.UserInterface.news.data.Repository.NewsRepositoryImplementation
+import pt.ipca.projetopdm.UserInterface.news.di.RetrofitClient
+import pt.ipca.projetopdm.UserInterface.news.domain.repository.NewsRepository
+import pt.ipca.projetopdm.UserInterface.productsList.AppDatabase
+//import pt.ipca.projetopdm.UserInterface.productsList.FoodDaoImpl
+import pt.ipca.projetopdm.UserInterface.productsList.FoodScreen
+import pt.ipca.projetopdm.UserInterface.productsList.FoodViewModel
+import pt.ipca.projetopdm.UserInterface.productsList.FoodViewModelFactory
+import pt.ipca.projetopdm.UserInterface.productsList.SavedListsScreen
 
 //import pt.ipca.projetopdm.UserInterface.home.HomeTela
 
@@ -40,7 +53,8 @@ enum class Routes {
     ProductsList,
     Chat,
     UserListPeopleScreen,
-    News
+    News,
+    SavedLists
 }
 
 enum class AuthRoutes {
@@ -328,29 +342,111 @@ fun NavControllerNavigation(auth: FirebaseAuth) {
                 }
             } else {
                 // Exibir noticias
-                News(navController = navController, auth = FirebaseAuth.getInstance())
+
+                val newsStore = RetrofitClient.getNewsStoreApi()
+                val newsRepository = remember { NewsRepositoryImplementation(newsStore) }
+
+                News(navController = navController, newsRepository = newsRepository)
             }
 
         }
 
 
         composable(route = Routes.ProductsList.name) {
-            ProductsList(
+            var isAuthenticated by remember { mutableStateOf(auth.currentUser != null) }
 
-                auth = auth,
-                onLogout = {
-                    auth.signOut() // Realiza o logout
-                    Log.i("ListPurchases", "Logout realizado. Navegando para Login...")
-                    navController.navigate(AuthRoutes.Login.name) // Navega de volta para Login após logout
-                },
-                onNavigateToSignUp = {navController.navigate(AuthRoutes.SignUp.name)},
-                onEditClick = { field ->
-                    Log.d("ProfileEdit", "Edit button clicked on field: $field")
+            DisposableEffect(auth) {
+                Log.d(
+                    "AuthState",
+                    "Verificando autenticação. Utilizador atual: ${auth.currentUser?.email}"
+                )
+
+                // Adiciona um ouvinte para mudanças no estado de autenticação
+                val authStateListener = FirebaseAuth.AuthStateListener { firebaseAuth ->
+                    isAuthenticated = firebaseAuth.currentUser != null
+                    Log.d(
+                        "AuthState",
+                        "Novo estado de autenticação: ${firebaseAuth.currentUser?.email}"
+                    )
                 }
-            )
+
+                auth.addAuthStateListener(authStateListener)
+                onDispose {
+                    auth.removeAuthStateListener(authStateListener)
+                }
+            }
+
+            if (!isAuthenticated) {
+                Log.d("AuthState", "Utilizador não autenticado. Navegando para Login...")
+                navController.navigate(AuthRoutes.Login.name) {
+                    // Garante que não voltaremos para a tela anterior após navegar para o login
+                    popUpTo(0)
+                    launchSingleTop = true
+                }
+            } else {
+
+                val context = LocalContext.current
+
+                val db = Room.databaseBuilder(
+                    context,
+                    AppDatabase::class.java, "food-database"
+                ).build()
+
+                val foodDao = db.foodDao()
+
+
+                val foodViewModel: FoodViewModel = viewModel(factory = FoodViewModelFactory(application = context.applicationContext as Application))
+
+                FoodScreen(viewModel = foodViewModel, auth = FirebaseAuth.getInstance(), navController = navController,
+                    onNavigateToSavedLists = {navController.navigate(Routes.SavedLists.name)},
+                    onAddNewFood = {foodViewModel.setAddingProductState(true)})
+            }
         }
 
+        composable(route = Routes.SavedLists.name) {
+            var isAuthenticated by remember { mutableStateOf(auth.currentUser != null) }
 
+            DisposableEffect(auth) {
+                Log.d(
+                    "AuthState",
+                    "Verificando autenticação. Utilizador atual: ${auth.currentUser?.email}"
+                )
+
+                // Adiciona um ouvinte para mudanças no estado de autenticação
+                val authStateListener = FirebaseAuth.AuthStateListener { firebaseAuth ->
+                    isAuthenticated = firebaseAuth.currentUser != null
+                    Log.d(
+                        "AuthState",
+                        "Novo estado de autenticação: ${firebaseAuth.currentUser?.email}"
+                    )
+                }
+
+                auth.addAuthStateListener(authStateListener)
+                onDispose {
+                    auth.removeAuthStateListener(authStateListener)
+                }
+            }
+
+            if (!isAuthenticated) {
+                Log.d("AuthState", "Utilizador não autenticado. Navegando para Login...")
+                navController.navigate(AuthRoutes.Login.name) {
+                    // Garante que não voltaremos para a tela anterior após navegar para o login
+                    popUpTo(0)
+                    launchSingleTop = true
+                }
+            } else {
+
+                val context = LocalContext.current
+                val db = Room.databaseBuilder(
+                    context,
+                    AppDatabase::class.java, "food-database"
+                ).build()
+                val foodDao = db.foodDao()
+                val foodViewModel: FoodViewModel = viewModel(factory = FoodViewModelFactory(context.applicationContext as Application))
+
+                SavedListsScreen(viewModel = foodViewModel, auth = FirebaseAuth.getInstance(), onBack = { navController.popBackStack() })
+            }
+        }
 
 
 

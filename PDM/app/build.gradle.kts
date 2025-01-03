@@ -12,7 +12,7 @@ android {
 
     defaultConfig {
         applicationId = "pt.ipca.projetopdm"
-        minSdk = 24
+        minSdk = 26
         targetSdk = 33
         versionCode = 1
         versionName = "1.0"
@@ -102,6 +102,8 @@ dependencies {
     kapt ("com.google.dagger:hilt-android-compiler:2.44")
     kapt ("androidx.hilt:hilt-compiler:1.0.0")
     implementation ("androidx.hilt:hilt-navigation-compose:1.0.0")
+    implementation("androidx.compose.runtime:runtime-livedata")
+
 
     //------------------------------------------------------------------------------
 

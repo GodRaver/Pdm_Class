@@ -101,7 +101,7 @@ fun MenuGrid(navController: NavController) {
             }
             MenuItem(icon = painterResource(id = R.drawable.news), label = "News") {
                 Log.d("Navigation", "Navigating to News")
-                navController.navigate(Routes.ProfileEdit.name) // Navegação para a edição de perfil
+                navController.navigate(Routes.News.name) // Navegação para a edição de perfil
             }
         }
         Spacer(modifier = Modifier.height(16.dp))
@@ -128,7 +128,14 @@ fun MenuGrid(navController: NavController) {
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            // Adicionar mais MenuItems aqui, se necessário
+            MenuItem(painterResource(id = R.drawable.savedlists), label = "SavedLists") {
+                Log.d("Navigation", "Navigating to SavedLists")
+                navController.navigate(Routes.SavedLists.name) // Navegação para a lista de produtos
+            }
+            MenuItem(icon = painterResource(id = R.drawable.profileedit), label = "Profile Edit") {
+                Log.d("Navigation", "Navigating to Profile Edit")
+                navController.navigate(Routes.ProfileEdit.name) // Navegação para a edição de perfil
+            }
         }
     }
 }

@@ -38,7 +38,8 @@ fun CountryTabRow(
 
                     Text(
                         text = category,
-                        modifier = Modifier.padding(vertical = 8.dp, horizontal = 2.dp)
+                        modifier = Modifier.padding(vertical = 8.dp, horizontal = 2.dp),
+                        style = MaterialTheme.typography.bodyLarge
                     )
                 }
 

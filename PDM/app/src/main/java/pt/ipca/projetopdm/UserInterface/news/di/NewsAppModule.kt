@@ -12,7 +12,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import javax.inject.Singleton
 
-
+/*
 @Module
 @InstallIn(SingletonComponent::class)
 object NewsAppModule {
@@ -37,3 +37,26 @@ object NewsAppModule {
 
 
 }
+ */
+
+object RetrofitClient {
+
+    private var retrofit: Retrofit? = null
+
+    // Método para obter uma instância do Retrofit
+    fun getRetrofitInstance(): Retrofit {
+        if (retrofit == null) {
+            retrofit = Retrofit.Builder()
+                .baseUrl(NewsStore.BASE_URL)
+                .addConverterFactory(GsonConverterFactory.create())
+                .build()
+        }
+        return retrofit!!
+    }
+
+    // Método para obter a instância da API
+    fun getNewsStoreApi(): NewsStore {
+        return getRetrofitInstance().create(NewsStore::class.java)
+    }
+}
+

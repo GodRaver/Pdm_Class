@@ -19,7 +19,7 @@ import pt.ipca.projetopdm.UserInterface.NavControllerNavigation
 import pt.ipca.projetopdm.app.AutenticacaoApp
 import pt.ipca.projetopdm.ui.theme.ProjetoPDMTheme
 
-@AndroidEntryPoint
+
 class MainActivity : ComponentActivity() {
 
     private lateinit var auth: FirebaseAuth
