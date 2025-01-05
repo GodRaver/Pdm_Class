@@ -55,12 +55,14 @@ fun loadUserProfile(auth: FirebaseAuth, db: FirebaseFirestore, onProfileLoaded: 
 
 
 fun saveProfileChanges(userId: String, updatedFields: Map<String, Any>) {
-    val userDocRef = FirebaseFirestore.getInstance().collection("Utilizadores").document(userId)
+    val db = FirebaseFirestore.getInstance()
+    val userRef = db.collection("Utilizadores").document(userId)
 
-    userDocRef
+
+    userRef
         .update(updatedFields)
         .addOnSuccessListener {
-            Log.d("Firestore", "Perfil atualizado com sucesso!")
+            Log.d("Firestore", "Perfil atualizado com sucesso! $userRef")
         }
         .addOnFailureListener { e ->
             Log.e("Firestore", "Erro ao atualizar perfil", e)
@@ -77,6 +79,7 @@ fun updateEmail(
     onFailure: (Exception) -> Unit
 ) {
     val user = FirebaseAuth.getInstance().currentUser
+    val currentEmail = user?.email
 
     if (user == null) {
         Log.e("ProfileEdit", "Utilizador não autenticado")
@@ -87,11 +90,20 @@ fun updateEmail(
 
     // Verificar se o e-mail está verificado
     if (user.isEmailVerified) {
+        Log.d("ProfileEdit", "O e-mail atual é: $currentEmail")
         Log.d("ProfileEdit", "E-mail verificado, pode ser alterado")
     } else {
-        Log.e("ProfileEdit", "E-mail não verificado")
-        Toast.makeText(context, "Por favor, verifique seu e-mail antes de alterar.", Toast.LENGTH_SHORT).show()
-        onFailure(Exception("E-mail não verificado"))
+        // Enviar link de verificação
+        user.sendEmailVerification()
+            .addOnSuccessListener {
+                Log.d("ProfileEdit", "Link de verificação enviado para $currentEmail")
+                Toast.makeText(context, "Verifique seu e-mail e clique no link de confirmação antes de continuar.", Toast.LENGTH_LONG).show()
+                onFailure(Exception("E-mail não verificado"))
+            }
+            .addOnFailureListener {
+                Log.e("ProfileEdit", "Falha ao enviar link de verificação", it)
+                onFailure(it)
+            }
         return
     }
 
@@ -102,29 +114,26 @@ fun updateEmail(
 
     Log.d("ProfileEdit", "isExternalProvider: $isExternalProvider")  // Verificando o valor
 
-    if (!isExternalProvider) {
-        Log.e("ProfileEdit", "o problema não é o external Provider.")
-        Toast.makeText(context, "nao é esse o problema.", Toast.LENGTH_SHORT).show()
-        onFailure(Exception("Email vinculado a provedor externo"))
-        return
-    } else {Toast.makeText(context, "o problema é o external provider.", Toast.LENGTH_SHORT).show()
-        Log.e("ProfileEdit", "o problema esta no external provider.")
-    }
-
-
     user.reauthenticate(credential)
         .addOnCompleteListener { task ->
             if (task.isSuccessful) {
                 Log.d("ProfileEdit", "Reautenticação bem-sucedida")
-                user.updateEmail(newEmail)
+                user.verifyBeforeUpdateEmail(newEmail)
                     .addOnSuccessListener {
                         // Atualizar no Firestore
+                        Log.d("Profile Edit", "enviado para verificar email antes do update")
                         FirebaseFirestore.getInstance()
                             .collection("Utilizadores")
                             .document(user.uid)
                             .update("email", newEmail)
-                            .addOnSuccessListener { onSuccess() }
-                            .addOnFailureListener { onFailure(it) }
+                            .addOnSuccessListener {
+                                Log.d("ProfileEdit", "E-mail atualizado no Firestore")
+                                onSuccess()
+                            }
+                            .addOnFailureListener {
+                                Log.e("ProfileEdit", "Falha ao atualizar e-mail no Firestore", it)
+                                onFailure(it)
+                            }
                     }
                     .addOnFailureListener { onFailure(it) }
             } else {
@@ -133,6 +142,7 @@ fun updateEmail(
             }
         }
 }
+
 
 
 fun updatePassword(
@@ -230,3 +240,4 @@ fun uploadAndSaveUserImage(userId: String, imageUri: Uri, onSuccess: () -> Unit,
         onFailure(exception) // Falha no upload
     })
 }
+

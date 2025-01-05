@@ -42,6 +42,7 @@ import pt.ipca.projetopdm.UserInterface.productsList.FoodScreen
 import pt.ipca.projetopdm.UserInterface.productsList.FoodViewModel
 import pt.ipca.projetopdm.UserInterface.productsList.FoodViewModelFactory
 import pt.ipca.projetopdm.UserInterface.productsList.SavedListsScreen
+import pt.ipca.projetopdm.UserInterface.productsList.SharedLists
 
 //import pt.ipca.projetopdm.UserInterface.home.HomeTela
 
@@ -54,7 +55,8 @@ enum class Routes {
     Chat,
     UserListPeopleScreen,
     News,
-    SavedLists
+    SavedLists,
+    SharedLists
 }
 
 enum class AuthRoutes {
@@ -70,7 +72,6 @@ private const val HOME_NAVIGATION_TAG = "HomeNavigation"
 fun NavControllerNavigation(auth: FirebaseAuth) {
     val navController = rememberNavController()
 
-    // Estado para verificar se o usuário está autenticado
     var isAuthenticated by remember { mutableStateOf(auth.currentUser != null) }
 
     DisposableEffect(auth) {
@@ -449,6 +450,50 @@ fun NavControllerNavigation(auth: FirebaseAuth) {
         }
 
 
+
+        composable(route = Routes.SharedLists.name) {
+            var isAuthenticated by remember { mutableStateOf(auth.currentUser != null) }
+
+            val context = LocalContext.current
+
+            val foodViewModel: FoodViewModel = viewModel(factory = FoodViewModelFactory(context.applicationContext as Application))
+
+
+            DisposableEffect(auth) {
+                Log.d(
+                    "AuthState",
+                    "Verificando autenticação. Utilizador atual: ${auth.currentUser?.email}"
+                )
+
+                // Adiciona um ouvinte para mudanças no estado de autenticação
+                val authStateListener = FirebaseAuth.AuthStateListener { firebaseAuth ->
+                    isAuthenticated = firebaseAuth.currentUser != null
+                    Log.d(
+                        "AuthState",
+                        "Novo estado de autenticação: ${firebaseAuth.currentUser?.email}"
+                    )
+                }
+
+                auth.addAuthStateListener(authStateListener)
+                onDispose {
+                    auth.removeAuthStateListener(authStateListener)
+                }
+            }
+
+            if (!isAuthenticated) {
+                Log.d("AuthState", "Utilizador não autenticado. Navegando para Login...")
+                navController.navigate(AuthRoutes.Login.name) {
+                    // Garante que não voltaremos para a tela anterior após navegar para o login
+                    popUpTo(0)
+                    launchSingleTop = true
+                }
+            } else {
+
+
+
+                SharedLists(viewModel = foodViewModel, auth = FirebaseAuth.getInstance(), onBack = { navController.popBackStack() })
+            }
+        }
 
 
         // Tela Detail

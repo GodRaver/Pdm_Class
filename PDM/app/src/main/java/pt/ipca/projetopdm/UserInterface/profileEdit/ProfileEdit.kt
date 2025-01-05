@@ -57,7 +57,11 @@ import android.widget.Toast
 import androidx.compose.runtime.MutableState
 import coil3.request.ImageRequest
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import coil.compose.rememberImagePainter
 import coil3.compose.AsyncImage
 
@@ -85,7 +89,14 @@ fun ProfileEdit(
 ) {
     val context = LocalContext.current
     val activity = context as? Activity
-
+    val painter = rememberImagePainter(
+        data = profileImageUrl.value,
+        builder = {
+            crossfade(true)
+            placeholder(R.drawable.wait)
+            error(R.drawable.error)
+        }
+    )
 
     if (ContextCompat.checkSelfPermission(
             context,
@@ -106,32 +117,58 @@ fun ProfileEdit(
     val isLoading = remember { mutableStateOf(true) }
     //val profileImageUrl = remember { mutableStateOf("") }
     val userId = auth.currentUser?.uid ?: ""
+    var lastUploadedImageUrl by remember { mutableStateOf<String?>(null) }
+
 
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
         onResult = { uri ->
             Log.d("ProfileEdit", "URI selecionada: $uri")
 
-            val userId = auth.currentUser?.uid
+            val userId = auth.currentUser?.uid // Obtenha o userId
+
             Log.d("ProfileEdit", "User ID: $userId")  // Adicione um log para confirmar o UID
             if (userId == null) {
                 Log.e("ProfileEdit", "Usuário não autenticado")
                 return@rememberLauncherForActivityResult // Se o usuário não estiver autenticado, retorna e não faz upload
             }
 
+            val oldImageUrl = profileImageUrl.value // O caminho completo da imagem
+            val storageRef = FirebaseStorage.getInstance().reference
+
             uri?.let {
+
+                if (oldImageUrl.isNotEmpty()) {
+                    val imageRef = storageRef.child("${Uri.parse(oldImageUrl)?.lastPathSegment}")
+                    imageRef.delete()
+                        .addOnSuccessListener {
+                            Log.d("ProfileEdit", "Imagem excluída com sucesso.")
+                        }
+                        .addOnFailureListener { exception ->
+                            Log.e("ProfileEdit", "Erro ao excluir a imagem", exception)
+                            Log.d("ProfileEdit", "Erro ao excluir imagem $imageRef")
+                        }
+                }
+
+                // Agora faz o upload da nova imagem
                 uploadProfilePhoto(
                     context = context,
                     uri = it, // Passa diretamente o Uri
                     userId = userId,
-                    //profileImageUrl = profileImageUrl,
                     onSuccess = { imageUrl ->
-                        Log.d("ProfileEdit", "URL da imagem retornado: $imageUrl")
-                        val updatedFields = mapOf("profileImageurl" to imageUrl)
+
+                        // Atualiza a URL da nova imagem no Firestore
+                        val updatedFields = mapOf("profileimageurl" to imageUrl)  // estava profileImageurl
+
+                        // Atualiza a URL da imagem no estado (para refletir na UI)
                         profileImageUrl.value = "$imageUrl?t=${System.currentTimeMillis()}"
                         Log.d("ProfileEdit", "profileImageUrl.value atualizado: ${profileImageUrl.value}")
+
+                        // Salva as mudanças no Firestore
                         saveProfileChanges(userId, updatedFields)
-                        onPhotoSelected(imageUrl) // Atualiza callback
+
+                        // Atualiza a interface com a nova URL
+                        onPhotoSelected(imageUrl) // Atualiza o callback
                     },
                     onFailure = { exception ->
                         Log.e("ProfileEdit", "Erro ao fazer upload da foto", exception)
@@ -140,6 +177,7 @@ fun ProfileEdit(
             }
         }
     )
+
 
 
     LaunchedEffect(auth) {
@@ -179,12 +217,10 @@ fun ProfileEdit(
             ) {
                 Log.d("ProfileEdit", "URL da imagem passada para AsyncImage: ${profileImageUrl.value}")
 
-                AsyncImage(   //--------------------------------------------------------------------------------
-                    model = profileImageUrl.value,
+                Image(
+                    painter = painter,
                     contentDescription = "Foto de Perfil",
-                    modifier = Modifier.fillMaxSize(),
-                    placeholder = painterResource(R.drawable.wait), // Exibir imagem de placeholder enquanto carrega
-                    error = painterResource(R.drawable.error) // Exibir uma imagem de erro se falhar
+                    modifier = Modifier.fillMaxSize()
                 )
 
                 IconButton(
@@ -217,24 +253,34 @@ fun ProfileEdit(
             )
 
             fields.forEach { (label, value) ->
-                EditableFieldWithTextField(
-                    label = label,
-                    initialValue = value,
-                    onValueChange = { updatedValue ->
-                        userProfile.value = userProfile.value.toMutableMap().apply {
-                            this[label] = updatedValue
+                if (label == "password" || label == "newPassword") {
+                    EditablePasswordField(
+                        label = label,
+                        initialValue = value,
+                        onValueChange = { updatedValue ->
+                            userProfile.value = userProfile.value.toMutableMap().apply {
+                                this[label] = updatedValue
+                            }
                         }
-                    }
-                )
+                    )
+                } else {
+                    EditableFieldWithTextField(
+                        label = label,
+                        initialValue = value,
+                        onValueChange = { updatedValue ->
+                            userProfile.value = userProfile.value.toMutableMap().apply {
+                                this[label] = updatedValue
+                            }
+                        }
+                    )
+                }
                 Spacer(modifier = Modifier.height(16.dp))
             }
 
             // Botão para salvar alterações
             Button(
                 onClick = {
-
                     val normalizedUserProfile = normalizeKeys(userProfile.value)
-
 
                     val currentEmail = normalizedUserProfile["email"] ?: ""
                     val newEmail = normalizedUserProfile["newemail"] ?: ""
@@ -242,87 +288,70 @@ fun ProfileEdit(
                     val newPassword = normalizedUserProfile["newpassword"] ?: ""
                     val user = FirebaseAuth.getInstance().currentUser
 
+                    if (currentPassword.isEmpty()) {
+                        Toast.makeText(context, "A senha atual é obrigatória.", Toast.LENGTH_SHORT).show()
+                        return@Button
+                    }
 
                     if (newPassword.isNotEmpty()) {
-                        Log.d("ProfileEdit", "Conteúdo do userProfile: ${userProfile.value}")
+                        Log.d("ProfileEdit", "Atualizando senha...")
                         updatePassword(
-                            currentPassword = currentPassword,  // Senha atual
+                            currentPassword = currentPassword,
                             newPassword = newPassword,
                             onSuccess = {
                                 Log.d("ProfileEdit", "Senha atualizada com sucesso.")
-                                Toast.makeText(
-                                    context,
-                                    "Senha atualizada com sucesso",
-                                    Toast.LENGTH_SHORT
-                                ).show()
+                                Toast.makeText(context, "Senha atualizada com sucesso.", Toast.LENGTH_SHORT).show()
                             },
                             onFailure = { error ->
-                                Log.e(
-                                    "ProfileEdit",
-                                    "Erro ao atualizar a password: ${error.message}",
-                                    error
-                                )
-                                Toast.makeText(
-                                    context,
-                                    "Erro update password: ${error.message}",
-                                    Toast.LENGTH_LONG
-                                ).show()
+                                Log.e("ProfileEdit", "Erro ao atualizar a senha: ${error.message}", error)
+                                Toast.makeText(context, "Erro ao atualizar a senha: ${error.message}", Toast.LENGTH_LONG).show()
                             }
-
                         )
                     }
 
-
-                    // Atualizar o email se ele foi alterado
                     if (newEmail.isNotEmpty()) {
-                        Log.d("ProfileEdit", "Conteúdo do userProfile: ${userProfile.value}")
-
+                        Log.d("ProfileEdit", "Atualizando e-mail...")
                         updateEmail(
                             context = context,
-                            currentPassword = currentPassword,  // Senha atual
+                            currentPassword = currentPassword,
                             newEmail = newEmail,
                             onSuccess = {
-                                Log.d("ProfileEdit", "Email atualizado com sucesso.")
-                                Toast.makeText(
-                                    context,
-                                    "Email atualizado com sucesso",
-                                    Toast.LENGTH_SHORT
-                                ).show()
+                                Log.d("ProfileEdit", "E-mail atualizado com sucesso.")
+                                Toast.makeText(context, "E-mail atualizado com sucesso.", Toast.LENGTH_SHORT).show()
+
+                                // Recarregar usuário para atualizar o estado do e-mail
+                                user!!.reload().addOnCompleteListener { reloadTask ->
+                                    if (reloadTask.isSuccessful) {
+                                        Log.d("ProfileEdit", "Usuário recarregado. Novo e-mail: ${user!!.email}")
+                                    } else {
+                                        Log.e("ProfileEdit", "Falha ao recarregar o usuário", reloadTask.exception)
+                                    }
+                                }
                             },
                             onFailure = { error ->
-                                Log.e(
-                                    "ProfileEdit",
-                                    "Erro ao atualizar o e-mail: ${error.message}",
-                                    error
-                                )
-                                Toast.makeText(
-                                    context,
-                                    "Erro update email: ${error.message}",
-                                    Toast.LENGTH_LONG
-                                ).show()
+                                Log.e("ProfileEdit", "Erro ao atualizar o e-mail: ${error.message}", error)
+                                Toast.makeText(context, "Erro ao atualizar o e-mail: ${error.message}", Toast.LENGTH_LONG).show()
                             }
-
                         )
                     }
 
+                    if (newPassword.isEmpty() && newEmail.isEmpty()) {
+                        Toast.makeText(context, "Nada para atualizar.", Toast.LENGTH_SHORT).show()
+                    }
 
-                    // Atualizar a senha se ela foi alterada
-
-
+                    // Atualizar perfil no Firestore
                     saveProfileChanges(
-                        userId = userId,
+                        userId = user?.uid ?: "",
                         updatedFields = normalizeKeys(userProfile.value)
-
-
                     )
-                    Toast.makeText(context, "Alterações salvas com sucesso", Toast.LENGTH_SHORT)
-                        .show()
+                    Toast.makeText(context, "Alterações salvas com sucesso", Toast.LENGTH_SHORT).show()
                     Log.d("ProfileEdit", "Conteúdo do userProfile: ${userProfile.value}")
                 },
                 modifier = Modifier.padding(top = 16.dp)
             ) {
                 Text("Salvar Alterações")
             }
+
 
         }
     }
@@ -373,8 +402,7 @@ fun ProfileEdit(
     ) {
         try {
             val storageRef = FirebaseStorage.getInstance().reference
-            val photoRef =
-                storageRef.child("profile_photos/$userId/${System.currentTimeMillis()}.jpg")
+            val photoRef = storageRef.child("profile_photos/$userId/${System.currentTimeMillis()}.jpg")
 
             Log.d("ProfileEdit", "Iniciando upload: $userId, Uri: $uri") // Log para debugar
 
@@ -468,6 +496,45 @@ fun ProfileEdit(
             )
         }
     }
+
+fun isValidEmail(email: String): Boolean {
+    val emailRegex = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$"
+    return email.matches(emailRegex.toRegex())
+}
+
+@Composable
+fun EditablePasswordField(
+    label: String,
+    initialValue: String,
+    onValueChange: (String) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 2.dp)
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+        TextField(
+            value = initialValue,
+            onValueChange = onValueChange,
+            label = { Text(label) },
+            visualTransformation = PasswordVisualTransformation(), // Esconde os caracteres digitados
+            keyboardOptions = KeyboardOptions.Default.copy(
+                imeAction = ImeAction.Done
+            ),
+            keyboardActions = KeyboardActions.Default,
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color.White, MaterialTheme.shapes.medium)
+                .height(80.dp), // Ajuste de altura mais convencional para TextField
+            singleLine = true
+        )
+    }
+}
 
 
 

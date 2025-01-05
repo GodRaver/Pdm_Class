@@ -64,7 +64,7 @@ fun HomeTela(
         ) {
             // Título do menu
             Text(
-                text = "Profile",
+                text = "Menu Principal",
                 style = MaterialTheme.typography.titleLarge,
                 color = Color.DarkGray,
                 modifier = Modifier.padding(bottom = 16.dp)
@@ -132,9 +132,9 @@ fun MenuGrid(navController: NavController) {
                 Log.d("Navigation", "Navigating to SavedLists")
                 navController.navigate(Routes.SavedLists.name) // Navegação para a lista de produtos
             }
-            MenuItem(icon = painterResource(id = R.drawable.profileedit), label = "Profile Edit") {
-                Log.d("Navigation", "Navigating to Profile Edit")
-                navController.navigate(Routes.ProfileEdit.name) // Navegação para a edição de perfil
+            MenuItem(icon = painterResource(id = R.drawable.shared), label = "Profile Edit") {
+                Log.d("Navigation", "Navigating to SharedLists")
+                navController.navigate(Routes.SharedLists.name) // Navegação para a edição de perfil
             }
         }
     }

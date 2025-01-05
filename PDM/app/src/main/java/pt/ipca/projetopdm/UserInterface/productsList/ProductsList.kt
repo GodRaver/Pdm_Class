@@ -89,10 +89,10 @@ fun FoodScreen(
     val isAddingProduct = viewModel.isAddingProduct
     val foods by viewModel.foods.observeAsState(emptyList())
     val selectedFoods = viewModel.selectedFoods
-    val savedLists by viewModel.savedLists.observeAsState(emptyList())
+    val savedLists by viewModel.savedListsWithFoods.observeAsState(emptyList())
 
     val onSaveList = {
-        val listName = "Lista criada com ID: ${System.currentTimeMillis()}"
+        val listName = "Lista criada com ID: ${System.currentTimeMillis()} Utilizador: ${auth.currentUser?.email}"
         viewModel.saveList(listName)
     }
 

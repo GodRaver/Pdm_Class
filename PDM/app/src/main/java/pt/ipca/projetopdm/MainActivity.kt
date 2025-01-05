@@ -36,15 +36,6 @@ class MainActivity : ComponentActivity() {
 
             NavControllerNavigation(auth = auth)
             }
-
-
-
         }
-
-
-
-
-
-
     }
 

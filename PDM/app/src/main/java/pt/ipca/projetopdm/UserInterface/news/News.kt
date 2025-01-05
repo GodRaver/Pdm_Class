@@ -1,5 +1,6 @@
 package pt.ipca.projetopdm.UserInterface.news
 
+import android.util.Log
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
@@ -51,9 +52,19 @@ fun News(navController: NavController, newsRepository: NewsRepository) {
     // Inicializando o estado de resultado como Resource.Loading corretamente com o tipo esperado
     val result = remember { mutableStateOf<Resource<List<Data>>>(Resource.Loading()) }
 
+    //NavGraphSetup(navController = navController, newsRepository = newsRepository, auth = auth)
+
     // Usar LaunchedEffect para buscar notícias de forma assíncrona
     LaunchedEffect(Unit) {
-        result.value = newsRepository.getFinanceNews("us") // Exemplo: buscando notícias financeiras dos EUA
+        try {
+            result.value = newsRepository.getFinanceNews("us")
+            Log.d("News", "Notícias carregadas com sucesso.")
+        }
+        catch(e: Exception) {
+
+            result.value = Resource.Error("Erro ao carregar notícias: ${e.message}")
+            Log.e("NewsScreen", "Erro ao carregar notícias: ${e.message}")
+        }
     }
 
     // Exibindo o estado da requisição
@@ -67,6 +78,7 @@ fun News(navController: NavController, newsRepository: NewsRepository) {
                         onCardClicked = { articleData ->
                             // On card click, navigate to the ArticleScreen with the article's URL
                             navController.navigate("article_screen?url=${articleData.url}")
+                            Log.d("NavController", "Navegação para: article_screen?url=${articleData.url}")
                         }
                     )
                 }

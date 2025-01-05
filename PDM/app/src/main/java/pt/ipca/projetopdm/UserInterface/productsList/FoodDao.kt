@@ -10,6 +10,7 @@ import androidx.room.Query
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.Transaction
+import androidx.room.TypeConverters
 import androidx.room.Update
 
 @Dao
@@ -40,20 +41,45 @@ interface FoodDao {
     suspend fun addSavedListFoods(crossRefs: List<SavedListFoodCrossRef>)
 
     @Transaction
-    @Query("SELECT * FROM SavedList")
+    @Query("SELECT * FROM saved_lists")
     fun getSavedListsWithFoods(): LiveData<List<SavedListWithFoods>>
 
     @Query("SELECT * FROM foods WHERE foodId = :id")
     suspend fun getFoodById(id: Int): Food?
 
-    @Query("DELETE FROM SavedList WHERE listId = :listId")
+    @Query("DELETE FROM saved_lists WHERE listId = :listId")
     suspend fun deleteSavedListById(listId: Int)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertSavedList(savedList: SavedList)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertSavedLists(savedLists: List<SavedList>)
+
+    @Query("SELECT * FROM saved_lists WHERE userId = :userId ORDER BY createdAt DESC")
+    fun getSavedListsByUser(userId: String): LiveData<List<SavedList>>
+
+    @Transaction
+    @Query("SELECT * FROM saved_lists WHERE userId = :userId")
+    fun getSavedListsWithFoodsByUser(userId: String): LiveData<List<SavedListWithFoods>>
+
+    @Query("SELECT * FROM saved_lists WHERE synced = 0")
+    suspend fun getUnsyncedSavedLists(): List<SavedList>
+
+    @Query("UPDATE saved_lists SET synced = :status WHERE listId = :listId")
+    suspend fun updateSyncedStatus(listId: Int, status: Boolean)
+
+    //@Query("SELECT * FROM saved_lists WHERE sharedWith LIKE '%' || :currentUserId || '%'")
+    //fun getSharedLists(currentUserId: String): LiveData<List<SavedList>>   //obter as listas compartilhadas diretamente do room
+
+
 
 }
 
 
 
-@Database(entities = [Food::class, SavedList::class, SavedListFoodCrossRef::class], version = 7)
+@Database(entities = [Food::class, SavedList::class, SavedListFoodCrossRef::class], version = 9)
+@TypeConverters(ConverterDate::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun foodDao(): FoodDao
 

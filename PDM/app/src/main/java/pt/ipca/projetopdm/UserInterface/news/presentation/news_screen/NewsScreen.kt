@@ -91,10 +91,10 @@ fun NewsScreen(
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
 
-    if (shouldBottomSheetShow) {
+    if (sheetState.isVisible) {
         ModalBottomSheet(
             onDismissRequest = {
-                shouldBottomSheetShow = false
+                coroutineScope.launch { sheetState.hide() }
             },
             sheetState = sheetState,
             content = {
@@ -103,15 +103,14 @@ fun NewsScreen(
                         article = it,
                         onReadFullStoryButtonClicked = {
                             onReadFullStoryButtonClicked(it.url)
-                            coroutineScope.launch { sheetState.hide() }.invokeOnCompletion {
-                                if (!sheetState.isVisible) shouldBottomSheetShow = false
-                            }
+                            coroutineScope.launch { sheetState.hide() }
                         }
                     )
                 }
             }
         )
     }
+
 
     LaunchedEffect(key1 = pagerState) {
         snapshotFlow { pagerState.currentPage }.collect { page ->
@@ -201,12 +200,14 @@ fun NewsArticlesList(
 ) {
     when (val resource = state.resource) {
         is Resource.Loading -> {
+            Log.d("NewsScreen", "Carregando notícias...")
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
         }
 
         is Resource.Error -> {
+            Log.e("NewsScreen", "Erro ao carregar notícias: ${resource.message}")
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text(
                     text = resource.message ?: "An error occurred",
@@ -219,6 +220,7 @@ fun NewsArticlesList(
         }
 
         is Resource.Success -> {
+            Log.d("NewsScreen", "Notícias carregadas com sucesso: ${resource.data?.size} artigos")
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 contentPadding = PaddingValues(16.dp)

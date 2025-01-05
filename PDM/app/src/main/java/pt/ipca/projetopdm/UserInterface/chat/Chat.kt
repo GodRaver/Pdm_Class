@@ -196,7 +196,7 @@ fun UserListPeopleScreen(navController: NavController, auth : FirebaseAuth) {
 
         if (users.value.isEmpty()) {
             Text(
-                text = "Nenhum usuário encontrado.",
+                text = "Nenhum utilizador encontrado.",
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(top = 16.dp)
             )

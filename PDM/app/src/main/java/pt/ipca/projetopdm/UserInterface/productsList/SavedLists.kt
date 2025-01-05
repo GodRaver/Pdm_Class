@@ -36,6 +36,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import pt.ipca.projetopdm.UserInterface.productsList.Food
 import pt.ipca.projetopdm.UserInterface.productsList.FoodDao
 import pt.ipca.projetopdm.UserInterface.productsList.FoodViewModel
@@ -44,7 +45,7 @@ import pt.ipca.projetopdm.UserInterface.productsList.ProductsList
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SavedListsScreen(viewModel: FoodViewModel, onBack: () -> Unit, auth: FirebaseAuth) {
-    val savedLists by viewModel.savedLists.observeAsState(emptyList())
+    val savedLists by viewModel.savedListsWithFoods.observeAsState(emptyList())
 
     Scaffold(
         topBar = {
@@ -149,3 +150,6 @@ fun EmptyStateSavedList(padding: PaddingValues) {
         }
     }
 }
+
+
+
