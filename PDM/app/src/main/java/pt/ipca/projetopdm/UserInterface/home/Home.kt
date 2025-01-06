@@ -50,7 +50,7 @@ import pt.ipca.projetopdm.R
 fun HomeTela(
     navController: NavController, // Navegação para Detalhes
     auth: FirebaseAuth,        // Instância do Firebase Authentication
-    onLogout: () -> Unit,      // Callback de logout
+    onLogout: () -> Unit,
     //onNavigateToSignUp: () -> Unit
 ) {
     Surface(
@@ -132,11 +132,27 @@ fun MenuGrid(navController: NavController) {
                 Log.d("Navigation", "Navigating to SavedLists")
                 navController.navigate(Routes.SavedLists.name) // Navegação para a lista de produtos
             }
-            MenuItem(icon = painterResource(id = R.drawable.shared), label = "Profile Edit") {
+            MenuItem(icon = painterResource(id = R.drawable.shared), label = "Share Lists") {
                 Log.d("Navigation", "Navigating to SharedLists")
                 navController.navigate(Routes.SharedLists.name) // Navegação para a edição de perfil
             }
         }
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            MenuItem(painterResource(id = R.drawable.receive), label = "Received Lists") {
+                Log.d("Navigation", "Navigating to ReceivedLists")
+                navController.navigate(Routes.ReceivedLists.name) // Navegação para a lista de produtos
+            }
+            MenuItem(icon = painterResource(id = R.drawable.shared), label = "Share Lists") {
+                Log.d("Navigation", "Navigating to SharedLists")
+                navController.navigate(Routes.SharedLists.name) // Navegação para a edição de perfil
+            }
+        }
+
     }
 }
 

@@ -36,13 +36,19 @@ import pt.ipca.projetopdm.UserInterface.news.News
 import pt.ipca.projetopdm.UserInterface.news.data.Repository.NewsRepositoryImplementation
 import pt.ipca.projetopdm.UserInterface.news.di.RetrofitClient
 import pt.ipca.projetopdm.UserInterface.news.domain.repository.NewsRepository
+import pt.ipca.projetopdm.UserInterface.news.presentation.article_screen.ArticleScreen
+import pt.ipca.projetopdm.UserInterface.news.presentation.news_screen.NewsScreen
+import pt.ipca.projetopdm.UserInterface.news.presentation.news_screen.NewsScreenViewModel
 import pt.ipca.projetopdm.UserInterface.productsList.AppDatabase
 //import pt.ipca.projetopdm.UserInterface.productsList.FoodDaoImpl
 import pt.ipca.projetopdm.UserInterface.productsList.FoodScreen
 import pt.ipca.projetopdm.UserInterface.productsList.FoodViewModel
 import pt.ipca.projetopdm.UserInterface.productsList.FoodViewModelFactory
+import pt.ipca.projetopdm.UserInterface.productsList.ReceivedListsScreen
+import pt.ipca.projetopdm.UserInterface.productsList.ReceivedListsScreen
 import pt.ipca.projetopdm.UserInterface.productsList.SavedListsScreen
-import pt.ipca.projetopdm.UserInterface.productsList.SharedLists
+import pt.ipca.projetopdm.UserInterface.productsList.SharedListsScreen
+import pt.ipca.projetopdm.UserInterface.productsList.SharedListsScreen
 
 //import pt.ipca.projetopdm.UserInterface.home.HomeTela
 
@@ -56,7 +62,8 @@ enum class Routes {
     UserListPeopleScreen,
     News,
     SavedLists,
-    SharedLists
+    SharedLists,
+    ReceivedLists
 }
 
 enum class AuthRoutes {
@@ -120,11 +127,11 @@ fun NavControllerNavigation(auth: FirebaseAuth) {
             )
         }
 
-        // Tela de Cadastro
+
         composable(route = AuthRoutes.SignUp.name) {
             SignUpTela(
                 onSignUpSuccess = {
-                    navController.navigate(Routes.Home.name) // Navega para a Home após cadastro
+                    navController.navigate(Routes.Home.name)
                 },
                 onNavigateToLogin = {
                     Log.i(HOME_NAVIGATION_TAG, "Navegação para login.")
@@ -147,10 +154,10 @@ fun NavControllerNavigation(auth: FirebaseAuth) {
                         "Navegando para rota: ${AuthRoutes.TermsAndConditions.name}"
                     )
 
-                    navController.navigate(AuthRoutes.SignUp.name) // Navega para a tela de cadastro
+                    navController.navigate(AuthRoutes.SignUp.name)
                 }
 
-                //onNavigateBack = { navController.popBackStack() } // Retorna à tela anterior
+                //onNavigateBack = { navController.popBackStack() }
             )
         }
 
@@ -163,22 +170,20 @@ fun NavControllerNavigation(auth: FirebaseAuth) {
             ) {
                 auth.signOut() // Realiza o logout
                 Log.i("HomeNavigation", "Logout realizado. Navegando para Login...")
-                navController.navigate(AuthRoutes.Login.name) // Navega de volta para Login após logout
+                navController.navigate(AuthRoutes.Login.name)
             }
         }
 
         //Tela Profile Edit
         composable(route = Routes.ProfileEdit.name) {
-            // Verifique se o usuário está autenticado
             var isAuthenticated by remember { mutableStateOf(auth.currentUser != null) }
 
             DisposableEffect(auth) {
                 Log.d(
                     "AuthState",
-                    "Verificando autenticação. Usuário atual: ${auth.currentUser?.email}"
+                    "Verificando autenticação. Utilizador atual: ${auth.currentUser?.email}"
                 )
 
-                // Adiciona um ouvinte para mudanças no estado de autenticação
                 val authStateListener = FirebaseAuth.AuthStateListener { firebaseAuth ->
                     isAuthenticated = firebaseAuth.currentUser != null
                     Log.d(
@@ -193,16 +198,13 @@ fun NavControllerNavigation(auth: FirebaseAuth) {
                 }
             }
 
-            // Se o usuário não estiver autenticado, navegue para o login
             if (!isAuthenticated) {
-                Log.d("AuthState", "Usuário não autenticado. Navegando para Login...")
+                Log.d("AuthState", "Utilizador não autenticado. Navegando para Login...")
                 navController.navigate(AuthRoutes.Login.name) {
-                    // Garante que não voltaremos para a tela anterior após navegar para o login
-                    popUpTo(0) // Zera a pilha de navegação
+                    popUpTo(0)
                     launchSingleTop = true
                 }
             } else {
-                // Caso o usuário esteja autenticado, exibe a tela de ProfileEdit
                 Log.d("Navigation", "Navigating to Profile Edit")
                 ProfileEdit(
                     auth = auth,
@@ -210,7 +212,7 @@ fun NavControllerNavigation(auth: FirebaseAuth) {
                         Log.d("ProfileEdit", "Logout iniciado")
                         auth.signOut()
                         navController.navigate(AuthRoutes.Login.name) {
-                            popUpTo(0) // Zera a pilha de navegação
+                            popUpTo(0)
                             launchSingleTop = true
                         }
                     },
@@ -243,7 +245,6 @@ fun NavControllerNavigation(auth: FirebaseAuth) {
                     "Verificando autenticação. Utilizador atual: ${auth.currentUser?.email}"
                 )
 
-                // Adiciona um ouvinte para mudanças no estado de autenticação
                 val authStateListener = FirebaseAuth.AuthStateListener { firebaseAuth ->
                     isAuthenticated = firebaseAuth.currentUser != null
                     Log.d(
@@ -259,9 +260,8 @@ fun NavControllerNavigation(auth: FirebaseAuth) {
             }
 
             if (!isAuthenticated) {
-                Log.d("AuthState", "Usuário não autenticado. Navegando para Login...")
+                Log.d("AuthState", "Utilizador não autenticado. Navegando para Login...")
                 navController.navigate(AuthRoutes.Login.name) {
-                    // Garante que não voltaremos para a tela anterior após navegar para o login
                     popUpTo(0)
                     launchSingleTop = true
                 }
@@ -287,7 +287,6 @@ fun NavControllerNavigation(auth: FirebaseAuth) {
             val senderEmail = Uri.decode(backStackEntry.arguments?.getString("senderEmail") ?: "")
             val recipientEmail = Uri.decode(backStackEntry.arguments?.getString("recipientEmail") ?: "")
 
-            // Passa os parâmetros para o ChatScreen
 
             Log.d("ChatScreen", "Sender Email: $senderEmail, Recipient Email: $recipientEmail")
 
@@ -299,13 +298,15 @@ fun NavControllerNavigation(auth: FirebaseAuth) {
                 onLogout = {
                     FirebaseAuth.getInstance().signOut()
                     navController.navigate(AuthRoutes.Login.name) {
-                        popUpTo(0) // Zera a pilha de navegação
+                        popUpTo(0)
                         launchSingleTop = true
                     }
                 },
                 navController = navController
             )
         }
+
+        val newsStore = RetrofitClient.getNewsStoreApi()
 
 
         composable(route =  Routes.News.name) {
@@ -319,50 +320,6 @@ fun NavControllerNavigation(auth: FirebaseAuth) {
                     "Verificando autenticação. Utilizador atual: ${auth.currentUser?.email}"
                 )
 
-                // Adiciona um ouvinte para mudanças no estado de autenticação
-                val authStateListener = FirebaseAuth.AuthStateListener { firebaseAuth ->
-                    isAuthenticated = firebaseAuth.currentUser != null
-                    Log.d(
-                        "AuthState",
-                        "Novo estado de autenticação: ${firebaseAuth.currentUser?.email}"
-                    )
-                }
-
-                auth.addAuthStateListener(authStateListener)
-                onDispose {
-                    auth.removeAuthStateListener(authStateListener)
-                }
-            }
-
-            if (!isAuthenticated) {
-                Log.d("AuthState", "Usuário não autenticado. Navegando para Login...")
-                navController.navigate(AuthRoutes.Login.name) {
-                    // Garante que não voltaremos para a tela anterior após navegar para o login
-                    popUpTo(0)
-                    launchSingleTop = true
-                }
-            } else {
-                // Exibir noticias
-
-                val newsStore = RetrofitClient.getNewsStoreApi()
-                val newsRepository = remember { NewsRepositoryImplementation(newsStore) }
-
-                News(navController = navController, newsRepository = newsRepository)
-            }
-
-        }
-
-
-        composable(route = Routes.ProductsList.name) {
-            var isAuthenticated by remember { mutableStateOf(auth.currentUser != null) }
-
-            DisposableEffect(auth) {
-                Log.d(
-                    "AuthState",
-                    "Verificando autenticação. Utilizador atual: ${auth.currentUser?.email}"
-                )
-
-                // Adiciona um ouvinte para mudanças no estado de autenticação
                 val authStateListener = FirebaseAuth.AuthStateListener { firebaseAuth ->
                     isAuthenticated = firebaseAuth.currentUser != null
                     Log.d(
@@ -380,7 +337,95 @@ fun NavControllerNavigation(auth: FirebaseAuth) {
             if (!isAuthenticated) {
                 Log.d("AuthState", "Utilizador não autenticado. Navegando para Login...")
                 navController.navigate(AuthRoutes.Login.name) {
-                    // Garante que não voltaremos para a tela anterior após navegar para o login
+                    popUpTo(0)
+                    launchSingleTop = true
+                }
+            } else {
+                // Exibir noticias
+
+                //val newsRepository = remember { NewsRepositoryImplementation(newsStore) }
+
+                //News(navController = navController, newsRepository = newsRepository)
+
+                val newsRepository = remember { NewsRepositoryImplementation(newsStore) }
+                val viewModel = remember { NewsScreenViewModel(newsRepository, auth) }
+
+                NewsScreen(
+                    state = viewModel.state,
+                    onEvent = viewModel::onEvent,
+                    onReadFullStoryButtonClicked = { url ->
+                        val encodedUrl = Uri.encode(url)
+                        navController.navigate("article_screen?url=$encodedUrl")
+                    },
+                    auth = auth,
+                    navController = navController,
+                    newsRepository = newsRepository
+                )
+            }
+
+        }
+
+        composable(route = "news_screen") {
+            Log.d("NavGraph", "Rota de Notícias carregada: news_screen")
+            val newsRepository = remember { NewsRepositoryImplementation(newsStore) }
+
+            val viewModel = remember { NewsScreenViewModel(newsRepository, auth) }
+
+            // Tela de Notícias
+            NewsScreen(
+                state = viewModel.state,
+                onEvent = viewModel::onEvent,
+                onReadFullStoryButtonClicked = { url ->
+                    val encodedUrl = Uri.encode(url)
+                    navController.navigate("article_screen?url=$encodedUrl")
+                    Log.d("NavGraph", "estou a ir para aqui: $url")
+                },
+                auth = auth,
+                navController = navController,
+                newsRepository = newsRepository
+            )
+        }
+
+        composable(
+            route = "article_screen?url={url}",
+            arguments = listOf(navArgument("url") { type = NavType.StringType })
+        ) { backStackEntry ->
+            // Obtendo o parâmetro "url" da navegação
+            val url = backStackEntry.arguments?.getString("url")
+            val decodedUrl = Uri.decode(url ?: "")
+
+            // Exibindo a tela de detalhes do artigo
+            ArticleScreen(url = decodedUrl, onBackPressed = { navController.navigateUp() })
+        }
+
+
+
+        composable(route = Routes.ProductsList.name) {
+            var isAuthenticated by remember { mutableStateOf(auth.currentUser != null) }
+
+            DisposableEffect(auth) {
+                Log.d(
+                    "AuthState",
+                    "Verificando autenticação. Utilizador atual: ${auth.currentUser?.email}"
+                )
+
+                val authStateListener = FirebaseAuth.AuthStateListener { firebaseAuth ->
+                    isAuthenticated = firebaseAuth.currentUser != null
+                    Log.d(
+                        "AuthState",
+                        "Novo estado de autenticação: ${firebaseAuth.currentUser?.email}"
+                    )
+                }
+
+                auth.addAuthStateListener(authStateListener)
+                onDispose {
+                    auth.removeAuthStateListener(authStateListener)
+                }
+            }
+
+            if (!isAuthenticated) {
+                Log.d("AuthState", "Utilizador não autenticado. Navegando para Login...")
+                navController.navigate(AuthRoutes.Login.name) {
                     popUpTo(0)
                     launchSingleTop = true
                 }
@@ -413,7 +458,6 @@ fun NavControllerNavigation(auth: FirebaseAuth) {
                     "Verificando autenticação. Utilizador atual: ${auth.currentUser?.email}"
                 )
 
-                // Adiciona um ouvinte para mudanças no estado de autenticação
                 val authStateListener = FirebaseAuth.AuthStateListener { firebaseAuth ->
                     isAuthenticated = firebaseAuth.currentUser != null
                     Log.d(
@@ -431,7 +475,6 @@ fun NavControllerNavigation(auth: FirebaseAuth) {
             if (!isAuthenticated) {
                 Log.d("AuthState", "Utilizador não autenticado. Navegando para Login...")
                 navController.navigate(AuthRoutes.Login.name) {
-                    // Garante que não voltaremos para a tela anterior após navegar para o login
                     popUpTo(0)
                     launchSingleTop = true
                 }
@@ -465,7 +508,6 @@ fun NavControllerNavigation(auth: FirebaseAuth) {
                     "Verificando autenticação. Utilizador atual: ${auth.currentUser?.email}"
                 )
 
-                // Adiciona um ouvinte para mudanças no estado de autenticação
                 val authStateListener = FirebaseAuth.AuthStateListener { firebaseAuth ->
                     isAuthenticated = firebaseAuth.currentUser != null
                     Log.d(
@@ -483,7 +525,6 @@ fun NavControllerNavigation(auth: FirebaseAuth) {
             if (!isAuthenticated) {
                 Log.d("AuthState", "Utilizador não autenticado. Navegando para Login...")
                 navController.navigate(AuthRoutes.Login.name) {
-                    // Garante que não voltaremos para a tela anterior após navegar para o login
                     popUpTo(0)
                     launchSingleTop = true
                 }
@@ -491,7 +532,49 @@ fun NavControllerNavigation(auth: FirebaseAuth) {
 
 
 
-                SharedLists(viewModel = foodViewModel, auth = FirebaseAuth.getInstance(), onBack = { navController.popBackStack() })
+                SharedListsScreen(viewModel = foodViewModel, auth = FirebaseAuth.getInstance(), onBack = { navController.popBackStack() })
+            }
+        }
+
+        composable(route = Routes.ReceivedLists.name) {
+            var isAuthenticated by remember { mutableStateOf(auth.currentUser != null) }
+
+            val context = LocalContext.current
+
+            val foodViewModel: FoodViewModel = viewModel(factory = FoodViewModelFactory(context.applicationContext as Application))
+
+
+            DisposableEffect(auth) {
+                Log.d(
+                    "AuthState",
+                    "Verificando autenticação. Utilizador atual: ${auth.currentUser?.email}"
+                )
+
+                val authStateListener = FirebaseAuth.AuthStateListener { firebaseAuth ->
+                    isAuthenticated = firebaseAuth.currentUser != null
+                    Log.d(
+                        "AuthState",
+                        "Novo estado de autenticação: ${firebaseAuth.currentUser?.email}"
+                    )
+                }
+
+                auth.addAuthStateListener(authStateListener)
+                onDispose {
+                    auth.removeAuthStateListener(authStateListener)
+                }
+            }
+
+            if (!isAuthenticated) {
+                Log.d("AuthState", "Utilizador não autenticado. Navegando para Login...")
+                navController.navigate(AuthRoutes.Login.name) {
+                    popUpTo(0)
+                    launchSingleTop = true
+                }
+            } else {
+
+
+
+                ReceivedListsScreen(viewModel = foodViewModel, auth = FirebaseAuth.getInstance(), onBack = { navController.popBackStack() })
             }
         }
 

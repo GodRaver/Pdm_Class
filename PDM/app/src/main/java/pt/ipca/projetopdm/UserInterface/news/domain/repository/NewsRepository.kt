@@ -61,7 +61,7 @@ interface NewsRepository {
 
 /*
 
-class NewsRepository {
+class NewsRepositoryImplementation {
 
     private val newsStore = RetrofitClient.getNewsStoreApi()
 
@@ -92,3 +92,4 @@ class NewsRepository {
     }
 }
  */
+

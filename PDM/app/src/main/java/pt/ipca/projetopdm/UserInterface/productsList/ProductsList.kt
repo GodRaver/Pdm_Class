@@ -208,42 +208,6 @@ fun AddProductScreen(
     }
 }
 
-/*
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun SavedListsScreen(viewModel: FoodViewModel, onBack: () -> Unit) {
-    val savedLists by viewModel.savedLists.observeAsState(emptyList())
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Listas Salvas") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Voltar")
-                    }
-                }
-            )
-        }
-    ) { padding ->
-        LazyColumn(
-            contentPadding = padding,
-            modifier = Modifier.fillMaxSize()
-        ) {
-            items(savedLists) { listWithFoods ->
-                Text(text = listWithFoods.savedList.name, style = MaterialTheme.typography.titleMedium)
-                Spacer(modifier = Modifier.height(8.dp))
-                listWithFoods.foods.forEach { food ->
-                    Text(text = "- ${food.name}", style = MaterialTheme.typography.bodyMedium)
-                }
-                Spacer(modifier = Modifier.height(16.dp))
-                HorizontalDivider()
-            }
-        }
-    }
-}
- */
 
 
 @Composable
@@ -415,3 +379,42 @@ fun ProductCard(
         }
     }
 }
+
+
+
+/*
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SavedListsScreen(viewModel: FoodViewModel, onBack: () -> Unit) {
+    val savedLists by viewModel.savedLists.observeAsState(emptyList())
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Listas Salvas") },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Voltar")
+                    }
+                }
+            )
+        }
+    ) { padding ->
+        LazyColumn(
+            contentPadding = padding,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            items(savedLists) { listWithFoods ->
+                Text(text = listWithFoods.savedList.name, style = MaterialTheme.typography.titleMedium)
+                Spacer(modifier = Modifier.height(8.dp))
+                listWithFoods.foods.forEach { food ->
+                    Text(text = "- ${food.name}", style = MaterialTheme.typography.bodyMedium)
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                HorizontalDivider()
+            }
+        }
+    }
+}
+ */

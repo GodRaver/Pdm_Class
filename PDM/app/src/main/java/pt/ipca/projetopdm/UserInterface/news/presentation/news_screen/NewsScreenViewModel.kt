@@ -162,7 +162,7 @@ class NewsScreenViewModel(
     private var searchJob: Job? = null
 
     init {
-        // Carregar as notícias do país default 'us' na inicialização
+
         getNewsArticlesByCountry("us")
     }
 
@@ -186,7 +186,7 @@ class NewsScreenViewModel(
                 state = state.copy(isSearchBarVisible = true, datas = emptyList())
             }
 
-            // Descomentando o evento de mudança da query de pesquisa
+
             is NewsScreenEvent.onSearchQueryChanged -> {
                 // Atualizando o estado com a nova query
                 state = state.copy(searchQuery = event.searchQuery)
@@ -196,7 +196,7 @@ class NewsScreenViewModel(
 
                 // Iniciando um novo job para pesquisa com delay (debounce)
                 searchJob = viewModelScope.launch {
-                    delay(1000)  // Atraso de 1 segundo para permitir que o usuário termine de digitar
+                    delay(1000)  // Atraso de 1 segundo
                     searchForNews(query = state.searchQuery)
                 }
             }
@@ -255,10 +255,8 @@ class NewsScreenViewModel(
     // Função para pesquisar notícias com base na query de pesquisa
     private suspend fun searchForNews(query: String) {
         if (query.isBlank()) {
-            // Se a pesquisa estiver em branco, não faz nada
             return
         }
-        // Chamando o repositório para buscar as notícias com a query
         val result = newsRepository.searchForNews(query)
         when (result) {
             is Resource.Success -> {

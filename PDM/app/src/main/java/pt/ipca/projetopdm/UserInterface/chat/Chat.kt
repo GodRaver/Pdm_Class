@@ -370,7 +370,6 @@ fun sendMessageToDatabase(senderEmail: String, recipientEmail: String, message: 
 
     val chatRef = ref.child(safeSenderEmail).child(safeRecipientEmail)
 
-    // Crie a mensagem com um timestamp
     val messageData = hashMapOf(
         "message" to message,
         "timestamp" to System.currentTimeMillis()
@@ -379,7 +378,6 @@ fun sendMessageToDatabase(senderEmail: String, recipientEmail: String, message: 
     Log.d("Firebase", "Enviando mensagem: $messageData")
 
 
-    // Envie a mensagem
     chatRef.push().setValue(messageData).addOnCompleteListener { task ->
         if (task.isSuccessful) {
             Log.d("Firebase", "Mensagem enviada com sucesso")

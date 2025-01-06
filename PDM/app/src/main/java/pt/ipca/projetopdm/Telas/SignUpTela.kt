@@ -68,7 +68,7 @@ fun SignUpTela(
         // Dados do perfil que serão armazenados no Firestore
         val userProfileData = mapOf(
             "email" to (user.email ?: ""),
-            //"fullname" to (user.displayName ?: ""), // Você pode adicionar mais campos conforme necessário
+            //"fullname" to (user.displayName ?: ""),
             //"profileImageUrl" to (user.photoUrl?.toString() ?: "")
 
         )

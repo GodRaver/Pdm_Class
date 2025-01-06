@@ -69,8 +69,8 @@ interface FoodDao {
     @Query("UPDATE saved_lists SET synced = :status WHERE listId = :listId")
     suspend fun updateSyncedStatus(listId: Int, status: Boolean)
 
-    //@Query("SELECT * FROM saved_lists WHERE sharedWith LIKE '%' || :currentUserId || '%'")
-    //fun getSharedLists(currentUserId: String): LiveData<List<SavedList>>   //obter as listas compartilhadas diretamente do room
+    @Query("SELECT * FROM saved_lists WHERE sharedWith LIKE '%' || :currentUserId || '%'")
+    fun getSharedLists(currentUserId: String): LiveData<List<SavedList>>   //obter as listas compartilhadas diretamente do room
 
 
 
@@ -78,7 +78,7 @@ interface FoodDao {
 
 
 
-@Database(entities = [Food::class, SavedList::class, SavedListFoodCrossRef::class], version = 9)
+@Database(entities = [Food::class, SavedList::class, SavedListFoodCrossRef::class], version = 12)
 @TypeConverters(ConverterDate::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun foodDao(): FoodDao

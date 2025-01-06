@@ -21,7 +21,8 @@ data class SavedList(
     val name: String,
     val createdAt: Date,
     val userId: String,
-    val synced: Boolean = false
+    val synced: Boolean = false,
+
 )
 
 @Entity(primaryKeys = ["listId", "foodId"])
@@ -38,4 +39,12 @@ data class SavedListWithFoods(
         associateBy = Junction(SavedListFoodCrossRef::class)
     )
     val foods: List<Food>
+)
+
+data class SharedList(
+    val listId: String,
+    val ownerId: String,
+    val name: String,
+    val items: List<String>,
+    val sharedWith: String
 )

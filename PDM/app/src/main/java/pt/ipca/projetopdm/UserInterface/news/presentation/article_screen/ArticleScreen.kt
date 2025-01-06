@@ -48,7 +48,6 @@ fun ArticleScreen(
 
 
     if (url.isNullOrEmpty()) {
-        // You can show a default error message or a placeholder here
         Text("Invalid URL", style = MaterialTheme.typography.bodyLarge)
         return
     }

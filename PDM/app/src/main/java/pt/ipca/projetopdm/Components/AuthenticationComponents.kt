@@ -240,9 +240,8 @@ fun ClickableTextComponent(value: String, onTextSelected: (String) -> Unit) {
         withStyle(style = SpanStyle(color = Primary)) {
             append(privacyPolicyText)
         }
-        pop() // Finaliza a anotação
+        pop()
 
-        // Adiciona " and " como texto comum
         append(andText)
 
         // Adiciona a anotação para "Terms"

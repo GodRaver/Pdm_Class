@@ -112,7 +112,7 @@ fun updateEmail(
     Log.d("ProfileEdit", "ProviderData: ${providerData?.joinToString() ?: "null"}")
     val isExternalProvider = providerData?.any { it.providerId != "password" } == true
 
-    Log.d("ProfileEdit", "isExternalProvider: $isExternalProvider")  // Verificando o valor
+    Log.d("ProfileEdit", "isExternalProvider: $isExternalProvider")
 
     user.reauthenticate(credential)
         .addOnCompleteListener { task ->

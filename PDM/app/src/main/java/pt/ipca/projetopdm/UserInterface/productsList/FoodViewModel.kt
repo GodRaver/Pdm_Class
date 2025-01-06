@@ -22,6 +22,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Date
 
+
+
 class FoodViewModel(application: Application) : AndroidViewModel(application) {
 
     private val foodDao: FoodDao = AppDatabase.getDatabase(application).foodDao()
@@ -125,9 +127,11 @@ class FoodViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+
+
     fun saveList(name: String) {
         val userId = currentUserId ?: run {
-            Log.e("FoodViewModel", "Usuário não autenticado. Não é possível salvar a lista.")
+            Log.e("FoodViewModel", "Utilizador não autenticado. Não é possível salvar a lista.")
             return
         }
         viewModelScope.launch {
@@ -141,6 +145,9 @@ class FoodViewModel(application: Application) : AndroidViewModel(application) {
             syncListToFirestore(savedList) // Enviar para Firestore
         }
     }
+
+
+
 
 
 
@@ -166,7 +173,7 @@ class FoodViewModel(application: Application) : AndroidViewModel(application) {
     }
 
 
-    /*
+
     fun fetchSharedLists(currentUserId: String) {
         FirebaseFirestore.getInstance()
             .collection("shared_lists")
@@ -182,9 +189,9 @@ class FoodViewModel(application: Application) : AndroidViewModel(application) {
                 Log.e("FirestoreError", "Erro ao buscar listas compartilhadas", exception)
             }
     }
-     */
 
-    fun fetchSharedLists(currentUserId: String) {
+
+    fun fetchfLists(currentUserId: String) {
         val firestore = FirebaseFirestore.getInstance()
 
         firestore.collection("shared_lists")
@@ -321,7 +328,20 @@ class FoodViewModel(application: Application) : AndroidViewModel(application) {
             }
     }
 
+    /*
 
+    val sharedLists: LiveData<List<SharedList>> = liveData {
+        val userId = currentUserId ?: run {
+            emit(emptyList<SharedList>())
+            return@liveData
+        }
+        val lists = foodDao.getSharedLists(userId)
+        emit(lists)
+    }
+
+
+
+     */
 
 }
 

@@ -127,13 +127,13 @@ fun ProfileEdit(
 
             val userId = auth.currentUser?.uid // Obtenha o userId
 
-            Log.d("ProfileEdit", "User ID: $userId")  // Adicione um log para confirmar o UID
+            Log.d("ProfileEdit", "User ID: $userId")
             if (userId == null) {
                 Log.e("ProfileEdit", "Usuário não autenticado")
-                return@rememberLauncherForActivityResult // Se o usuário não estiver autenticado, retorna e não faz upload
+                return@rememberLauncherForActivityResult
             }
 
-            val oldImageUrl = profileImageUrl.value // O caminho completo da imagem
+            val oldImageUrl = profileImageUrl.value
             val storageRef = FirebaseStorage.getInstance().reference
 
             uri?.let {
@@ -150,17 +150,17 @@ fun ProfileEdit(
                         }
                 }
 
-                // Agora faz o upload da nova imagem
+
                 uploadProfilePhoto(
                     context = context,
-                    uri = it, // Passa diretamente o Uri
+                    uri = it,
                     userId = userId,
                     onSuccess = { imageUrl ->
 
-                        // Atualiza a URL da nova imagem no Firestore
+
                         val updatedFields = mapOf("profileimageurl" to imageUrl)  // estava profileImageurl
 
-                        // Atualiza a URL da imagem no estado (para refletir na UI)
+
                         profileImageUrl.value = "$imageUrl?t=${System.currentTimeMillis()}"
                         Log.d("ProfileEdit", "profileImageUrl.value atualizado: ${profileImageUrl.value}")
 
@@ -168,7 +168,7 @@ fun ProfileEdit(
                         saveProfileChanges(userId, updatedFields)
 
                         // Atualiza a interface com a nova URL
-                        onPhotoSelected(imageUrl) // Atualiza o callback
+                        onPhotoSelected(imageUrl)
                     },
                     onFailure = { exception ->
                         Log.e("ProfileEdit", "Erro ao fazer upload da foto", exception)
@@ -197,7 +197,7 @@ fun ProfileEdit(
             .fillMaxSize()
             .background(Color(0xFFE0F7FA))
     ) {
-        val scrollState = rememberScrollState() // Estado do scroll
+        val scrollState = rememberScrollState()
 
 
         Column(
@@ -207,7 +207,7 @@ fun ProfileEdit(
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Foto de Perfil com funcionalidade de edição
+
             Box(
                 contentAlignment = Alignment.BottomEnd,
                 modifier = Modifier
@@ -277,7 +277,6 @@ fun ProfileEdit(
                 Spacer(modifier = Modifier.height(16.dp))
             }
 
-            // Botão para salvar alterações
             Button(
                 onClick = {
                     val normalizedUserProfile = normalizeKeys(userProfile.value)
@@ -319,7 +318,6 @@ fun ProfileEdit(
                                 Log.d("ProfileEdit", "E-mail atualizado com sucesso.")
                                 Toast.makeText(context, "E-mail atualizado com sucesso.", Toast.LENGTH_SHORT).show()
 
-                                // Recarregar usuário para atualizar o estado do e-mail
                                 user!!.reload().addOnCompleteListener { reloadTask ->
                                     if (reloadTask.isSuccessful) {
                                         Log.d("ProfileEdit", "Usuário recarregado. Novo e-mail: ${user!!.email}")
@@ -339,7 +337,6 @@ fun ProfileEdit(
                         Toast.makeText(context, "Nada para atualizar.", Toast.LENGTH_SHORT).show()
                     }
 
-                    // Atualizar perfil no Firestore
                     saveProfileChanges(
                         userId = user?.uid ?: "",
                         updatedFields = normalizeKeys(userProfile.value)
@@ -385,7 +382,7 @@ fun ProfileEdit(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(Color.White, MaterialTheme.shapes.medium)
-                    .height(80.dp), // A altura foi ajustada para ser mais apropriada para o TextField
+                    .height(80.dp),
                 singleLine = true
             )
         }
@@ -431,7 +428,6 @@ fun ProfileEdit(
 
     @Composable
     fun ProfileFields(userProfile: MutableState<Map<String, String>>) {
-        // Lista de campos e valores para o formulário
         val fields = listOf(
             "fullName" to (userProfile.value["fullname"] ?: ""),
             "email" to (userProfile.value["email"] ?: ""),
@@ -472,27 +468,27 @@ fun ProfileEdit(
 
     @Composable
     fun ProfileImage() {
-        val imageUrl = "https://picsum.photos/200/300"  // URL de exemplo de Picsum
+        val imageUrl = "https://picsum.photos/200/300"  // URL de exemplo de Picsum para teste de imagens
         val painter = rememberImagePainter(
             imageUrl,
             builder = {
-                crossfade(true)  // Habilita o efeito de transição ao carregar
+                crossfade(true)
                 error(R.drawable.error)  // Imagem de erro
-                placeholder(R.drawable.wait)  // Imagem de placeholder enquanto carrega
+                placeholder(R.drawable.wait)
             }
         )
 
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
-                .size(120.dp)  // Define o tamanho da imagem
-                .clip(CircleShape)  // Corta a imagem para ficar circular
+                .size(120.dp)
+                .clip(CircleShape)
                 .background(Color.Gray)  // Fundo cinza caso a imagem não carregue
         ) {
             Image(
                 painter = painter,
                 contentDescription = "Foto de Perfil",
-                modifier = Modifier.fillMaxSize()  // A imagem ocupa todo o espaço disponível
+                modifier = Modifier.fillMaxSize()
             )
         }
     }
@@ -522,7 +518,7 @@ fun EditablePasswordField(
             value = initialValue,
             onValueChange = onValueChange,
             label = { Text(label) },
-            visualTransformation = PasswordVisualTransformation(), // Esconde os caracteres digitados
+            visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions.Default.copy(
                 imeAction = ImeAction.Done
             ),
@@ -530,7 +526,7 @@ fun EditablePasswordField(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(Color.White, MaterialTheme.shapes.medium)
-                .height(80.dp), // Ajuste de altura mais convencional para TextField
+                .height(80.dp),
             singleLine = true
         )
     }

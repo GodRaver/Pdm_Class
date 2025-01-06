@@ -103,7 +103,7 @@ fun SavedListCard(
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface
             )
-            Divider()
+            HorizontalDivider()
             listWithFoods.foods.forEach { food ->
                 Text(
                     text = "- ${food.name}",

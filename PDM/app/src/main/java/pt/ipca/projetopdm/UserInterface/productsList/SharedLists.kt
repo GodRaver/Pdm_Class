@@ -31,39 +31,50 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.google.firebase.auth.FirebaseAuth
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SharedLists(viewModel: FoodViewModel, onBack: () -> Unit, auth: FirebaseAuth) {
+fun SharedListsScreen(viewModel: FoodViewModel, onBack: () -> Unit, auth: FirebaseAuth) {
     val savedListsWithFoods by viewModel.savedListsWithFoods.observeAsState(emptyList())
     val currentUserId = auth.currentUser?.uid ?: return
     val savedLists by viewModel.savedListsWithFoods.observeAsState(emptyList())
     var selectedList by remember { mutableStateOf<SavedList?>(null) }
 
-    if (selectedList == null) {
-        // Selecionar uma lista
-        SelectListToShare(
-            lists = savedLists.map { it.savedList },
-            onShare = { list -> selectedList = list }
-        )
-    } else {
-        // Selecionar um utilizador para compartilhar
-        ShareListWithUser(
-            onShareWithUser = { userId ->
-                selectedList?.let {
-                    viewModel.shareListWithUser(it.listId, userId)
-                    selectedList = null // Reset após compartilhar
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.SpaceBetween // Espaça os elementos verticalmente
+    ) {
+        if (selectedList == null) {
+            // Selecionar uma lista
+            SelectListToShare(
+                lists = savedLists.map { it.savedList },
+                onShare = { list -> selectedList = list }
+            )
+        } else {
+            // Selecionar um utilizador para compartilhar
+            ShareListWithUser(
+                onShareWithUser = { userId ->
+                    selectedList?.let {
+                        viewModel.shareListWithUser(it.listId, userId)
+                        selectedList = null // Reset após compartilhar
+                    }
                 }
-            }
-        )
-    }
+            )
+        }
 
-    // Botão para voltar
-    Button(onClick = onBack, modifier = Modifier.padding(16.dp)) {
-        Text("Voltar")
+        // Botão para voltar
+        Button(
+            onClick = onBack,
+            modifier = Modifier.align(Alignment.CenterHorizontally)
+        ) {
+            Text("Voltar")
+        }
     }
 }
 
@@ -72,16 +83,35 @@ fun SelectListToShare(
     lists: List<SavedList>,
     onShare: (SavedList) -> Unit
 ) {
-    LazyColumn {
-        items(lists) { list ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onShare(list) }
-                    .padding(16.dp)
-            ) {
-                Text(text = list.name, modifier = Modifier.weight(1f))
-                Icon(imageVector = Icons.Default.Share, contentDescription = "Share")
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp)
+    ) {
+        Text(
+            text = "Escolhe uma lista para compartilhar com outros utiizadores:",
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
+
+        LazyColumn(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(8.dp) // Espaçamento entre os itens
+        ) {
+            items(lists) { list ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onShare(list) }
+                        .padding(8.dp)
+                ) {
+                    Text(
+                        text = list.name,
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    Icon(imageVector = Icons.Default.Share, contentDescription = "Share")
+                }
             }
         }
     }
@@ -93,13 +123,25 @@ fun ShareListWithUser(
 ) {
     var userId by remember { mutableStateOf("") }
 
-    Column(modifier = Modifier.padding(16.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = "Compartilhar com outro utilizador",
+            style = MaterialTheme.typography.titleMedium
+        )
+
         TextField(
             value = userId,
             onValueChange = { userId = it },
-            label = { Text("ID do Utilizador") }
+            label = { Text("ID do Utilizador") },
+            modifier = Modifier.fillMaxWidth()
         )
-        Spacer(modifier = Modifier.height(8.dp))
+
         Button(onClick = { onShareWithUser(userId) }) {
             Text("Compartilhar")
         }

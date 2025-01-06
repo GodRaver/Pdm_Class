@@ -225,7 +225,6 @@ fun NewsArticlesList(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 contentPadding = PaddingValues(16.dp)
             ) {
-                // Certifique-se de acessar 'resource.data' como uma lista de Data
                 resource.data?.let { articles ->
                     items(articles) { article ->
                         NewsArticleCard(data = article, onCardClicked = onCardClicked)

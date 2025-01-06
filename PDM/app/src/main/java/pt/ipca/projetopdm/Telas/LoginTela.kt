@@ -38,7 +38,7 @@ fun LoginTelas(
         val userId = user.uid
         val userRef = db.collection("Utilizadores").document(userId)
 
-        // Verifique se o perfil do usuário já existe no Firestore
+
         userRef.get().addOnSuccessListener { document ->
             if (document.exists()) {
                 // Se o perfil já existe, você pode atualizar os dados se necessário
@@ -139,7 +139,6 @@ fun LoginTelas(
             Text(text = errorMessage ?: "", color = MaterialTheme.colorScheme.error)
         }
 
-        // Se estiver carregando, mostra um indicador de carregamento
         if (isLoading) {
             CircularProgressIndicator()
         }
