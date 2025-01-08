@@ -43,8 +43,11 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.navigation.NavController
 import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import pt.ipca.projetopdm.UserInterface.news.data.Repository.NewsRepositoryImplementation
 import pt.ipca.projetopdm.UserInterface.news.domain.Model.Data
 //import pt.ipca.experiencia9.domain.model.Data
 import pt.ipca.projetopdm.UserInterface.news.domain.Model.Similar
@@ -56,6 +59,11 @@ import pt.ipca.projetopdm.UserInterface.news.presentation.component.NewsScreenTo
 import pt.ipca.projetopdm.UserInterface.news.presentation.component.RetryContent
 import pt.ipca.projetopdm.UserInterface.news.presentation.component.SearchAppBar
 import pt.ipca.projetopdm.UserInterface.news.util.Resource
+import pt.ipca.projetopdm.UserInterface.news.di.RetrofitClient
+
+
+val newsStore = RetrofitClient.getNewsStoreApi()
+val newsRepository = NewsRepositoryImplementation(newsStore)
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class,
     ExperimentalComposeUiApi::class
@@ -68,21 +76,51 @@ fun NewsScreen(
     state: NewsScreenState,
     onEvent: (NewsScreenEvent) -> Unit,
     onReadFullStoryButtonClicked: (String) -> Unit
+
+
+
 ) {
 
     val viewModel = remember { NewsScreenViewModel(newsRepository, auth) }
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
-    val pagerState = rememberPagerState(pageCount = { 38 })
+    val pagerState = rememberPagerState(pageCount = {41})
     val coroutineScope = rememberCoroutineScope()
     val countries = listOf("ar", "au", "be", "br", "ca", "ch", "cl", "cn", "cz", "de", "eg", "es", "eu", "fr", "gb", "global", "gr", "hk", "hu", "id", "ie", "il", "it", "jp", "kr", "lk", "mx", "my", "nl", "no", "nz", "ph", "pt", "qa", "ru", "sa", "tr", "tw", "us", "ve", "za")
-    var selectedCountry by remember { mutableStateOf(countries[0]) }
-
-    LaunchedEffect(pagerState.currentPage) {
-        Log.d("PagerState", "Current Page: ${pagerState.currentPage}")
-    }
-
+    //var selectedCountry by remember { mutableStateOf(countries[0]) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var shouldBottomSheetShow by remember { mutableStateOf(false) }
+    val selectedCountry = state.selectedCountry
+
+    val result = remember { mutableStateOf<Resource<List<Data>>>(Resource.Loading()) }
+
+    LaunchedEffect(Unit) {
+        try {
+            result.value = Resource.Loading()
+            result.value = newsRepository.getFinanceNews("us")  // ou qualquer outro país
+            Log.d("News", "Notícias carregadas com sucesso.")
+        } catch (e: Exception) {
+            result.value = Resource.Error("Erro ao carregar notícias: ${e.message}")
+            Log.e("NewsScreen", "Erro ao carregar notícias: ${e.message}")
+        }
+    }
+
+
+
+
+/*
+    LaunchedEffect(pagerState.currentPage) {
+        val country = countries[pagerState.currentPage]
+        if (selectedCountry != country) {
+            onEvent(NewsScreenEvent.onCountryChange(country)) // Atualiza o país no ViewModel
+        }
+    }
+
+
+ */
+
+
+
+
 
     val focusRequester = remember {
         FocusRequester()
@@ -91,18 +129,22 @@ fun NewsScreen(
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
 
-    if (sheetState.isVisible) {
+    if (sheetState.isVisible || shouldBottomSheetShow) {
+        Log.d("NewsScreen", "Abrindo ModalBottomSheet para o artigo: ${state.selectedArticle?.title}")
         ModalBottomSheet(
             onDismissRequest = {
                 coroutineScope.launch { sheetState.hide() }
             },
             sheetState = sheetState,
+            modifier = Modifier.fillMaxSize(),  //retirar para voltar a deixar em baixo
             content = {
-                state.selectedArticle?.let {
+                state.selectedArticle?.let { article ->
+                    Log.d("NewsScreen", "Artigo exibido no BottomSheet: ${article.title}")
                     BottomSheetComponent(
-                        article = it,
+                        article = article,
                         onReadFullStoryButtonClicked = {
-                            onReadFullStoryButtonClicked(it.url)
+                            Log.d("NewsScreen", "Botão 'Leia a notícia completa' clicado para: ${article.url}")
+                            onReadFullStoryButtonClicked(article.url)
                             coroutineScope.launch { sheetState.hide() }
                         }
                     )
@@ -139,7 +181,8 @@ fun NewsScreen(
                         },
                         onRetry = {
                             onEvent(NewsScreenEvent.onCountryChange(state.selectedCountry))
-                        }
+                        },
+                        newsRepository = newsRepository
                     )
                 }
             } else {
@@ -178,11 +221,13 @@ fun NewsScreen(
                             NewsArticlesList(
                                 state = state,
                                 onCardClicked = { article ->
+                                    shouldBottomSheetShow = true
                                     onEvent(NewsScreenEvent.onNewsCardClicked(data = article))
                                 },
                                 onRetry = {
                                     onEvent(NewsScreenEvent.onCountryChange(countries[page]))
-                                }
+                                },
+                                newsRepository = newsRepository
                             )
                         }
                     }
@@ -196,9 +241,31 @@ fun NewsScreen(
 fun NewsArticlesList(
     state: NewsScreenState,
     onCardClicked: (Data) -> Unit,
-    onRetry: () -> Unit
+    onRetry: () -> Unit,
+    newsRepository: NewsRepository
+
 ) {
-    when (val resource = state.resource) {
+    val result = remember { mutableStateOf<Resource<List<Data>>>(Resource.Loading()) }
+
+    LaunchedEffect(state.selectedCountry) {
+        try {
+            Log.d("NewsScreen", "Iniciando carregamento de notícias para o país: ${state.selectedCountry}")
+            result.value = Resource.Loading()
+            // Simula chamada à API
+            val news = withContext(Dispatchers.IO) {
+                // Substitua pelo método real de carregamento
+                newsRepository.getFinanceNews(state.selectedCountry)
+            }
+            result.value = news
+            Log.d("NewsScreen", "Notícias carregadas: ${(news as? Resource.Success)?.data?.size ?: 0} artigos")
+        } catch (e: Exception) {
+            Log.e("NewsScreen", "Erro ao carregar notícias: ${e.message}")
+            result.value = Resource.Error("Erro ao carregar notícias: ${e.message}")
+        }
+    }
+
+
+    when (val resource = result.value) {
         is Resource.Loading -> {
             Log.d("NewsScreen", "Carregando notícias...")
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -221,13 +288,20 @@ fun NewsArticlesList(
 
         is Resource.Success -> {
             Log.d("NewsScreen", "Notícias carregadas com sucesso: ${resource.data?.size} artigos")
+            Log.d("TESTETESTE", "log para ver se tem sucesso")
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 contentPadding = PaddingValues(16.dp)
             ) {
                 resource.data?.let { articles ->
+                    Log.d("LazyColumn", "Exibindo ${articles.size} artigos.")
                     items(articles) { article ->
-                        NewsArticleCard(data = article, onCardClicked = onCardClicked)
+                        NewsArticleCard(data = article,
+                            onCardClicked = {
+                                Log.d("NewsArticlesList", "Artigo clicado enviado: ${it.title}")
+                                onCardClicked(it)
+
+                            })
                     }
                 }
             }

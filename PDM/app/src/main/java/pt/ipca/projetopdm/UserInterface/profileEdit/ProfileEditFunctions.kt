@@ -88,7 +88,7 @@ fun updateEmail(
         return
     }
 
-    // Verificar se o e-mail está verificado
+
     if (user.isEmailVerified) {
         Log.d("ProfileEdit", "O e-mail atual é: $currentEmail")
         Log.d("ProfileEdit", "E-mail verificado, pode ser alterado")

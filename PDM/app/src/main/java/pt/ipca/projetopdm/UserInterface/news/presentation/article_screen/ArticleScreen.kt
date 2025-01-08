@@ -1,5 +1,6 @@
 package pt.ipca.projetopdm.UserInterface.news.presentation.article_screen
 
+import android.util.Log
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
@@ -48,6 +49,7 @@ fun ArticleScreen(
 
 
     if (url.isNullOrEmpty()) {
+        Log.e("ArticleScreen", "URL inválida: $url")
         Text("Invalid URL", style = MaterialTheme.typography.bodyLarge)
         return
     }
@@ -91,6 +93,7 @@ fun ArticleScreen(
 
                         override fun onPageFinished(view: WebView?, url: String?) {
                             isLoading = false
+                            Log.d("ArticleScreen", "Página carregada com sucesso: $url")
 
                         }
 
@@ -102,20 +105,23 @@ fun ArticleScreen(
                             super.onReceivedError(view, request, error)
                             isLoading = false
                             errorOccurred = true
+                            Log.e("ArticleScreen", "Erro ao carregar a página: ${error?.description}")
                         }
                     }
-
+                    Log.d("ArticleScreen", "Carregando URL: $url")
                     loadUrl(url ?: "")
                 }
             }
             )
 
-            if(isLoading && url != null) {
+            if(isLoading && !url.isNullOrEmpty()) {
 
                 CircularProgressIndicator()
+                Log.d("ArticleScreen", "Carregando a página...")
             }
             if (errorOccurred) {
                 Text(text = "Failed to load the article", color = Color.Red)
+                Log.e("ArticleScreen", "Falha ao carregar o artigo.")
             }
         }
     }

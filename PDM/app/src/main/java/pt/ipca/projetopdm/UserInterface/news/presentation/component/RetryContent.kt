@@ -27,7 +27,7 @@ fun RetryContent(
 
         Text(text = error, color = Color.Red, fontSize = 18.sp)
         Spacer(modifier = Modifier.height(8.dp))
-        Button(onClick = onRetry, modifier = Modifier.align(Alignment.CenterHorizontally)) {
+        Button(onClick = onRetry, modifier = Modifier.align(Alignment.End)) {
 
             Text(text = "Retry")
 

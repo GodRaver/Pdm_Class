@@ -1,6 +1,7 @@
 package pt.ipca.projetopdm.UserInterface.news.presentation.component
 
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -35,6 +36,7 @@ fun NewsArticleCard(
 
     //val date = DateFormatter(data.publishedAt)
 
+
     val formattedDate = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
         DateFormatter(data.publishedAt)  //api 26 ou superior
     } else {
@@ -42,15 +44,20 @@ fun NewsArticleCard(
     }
 
 
+    Log.d("NewsArticleCard", "Exibindo artigo: ${data.title}")
 
     Card(
-        modifier = modifier.clickable { onCardClicked(data) }
+        modifier = modifier.clickable {
+            Log.d("NewsArticleCard", "Artigo clicado: ${data.title}")
+            onCardClicked(data) }
     ) {
 
         Column(
 
             modifier = modifier.padding(12.dp)
         ) {
+            //Log.d("NewsArticleCard", "Exibindo detalhes do artigo: ${article.name}")
+
             ImageHolder(imageUrl = data.imageUrl)   //     ------
             Text(
 

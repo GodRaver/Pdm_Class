@@ -13,8 +13,6 @@ class NewsRepositoryImplementation(
 ): NewsRepository {
 
 
-
-
     override suspend fun searchForNews(query: String): Resource<List<Data>> {
         //return Resource.Success(emptyList())
         return try {
@@ -34,36 +32,34 @@ class NewsRepositoryImplementation(
     }
 
 
-
     override suspend fun getFinanceNews(countries: String?): Resource<List<Data>> {
         return try {
+
+            Log.d("getFinanceNews", "Chamando API com o país: $countries")
+            val response = newsStore.getFinanceNews(countries ?: "us")
             // Verifica se 'countries' foi passado
-            if (countries.isNullOrEmpty()) {
-                return Resource.Error("O parâmetro 'countries' não pode ser nulo ou vazio.")
-            }
-
-            Log.d("NewsRepositoryImplementation", "URL: ${NewsStore.BASE_URL}news/all?countries=$countries&limit=10&api_token=$API_KEY")
-
-
-            // Chama a API para obter notícias financeiras
-            val response = newsStore.getFinanceNews(countries ?: "pt")
-
-            // Verifica se a resposta contém dados e retorna o resultado
             if (response.data.isNotEmpty()) {
+                Log.d(
+                    "getFinanceNews",
+                    "Notícias carregadas com sucesso: ${response.data.size} artigos"
+                )
                 Resource.Success(response.data)
             } else {
-                //Log.e("API Error", "Erro na requisição: Código ${response.code()} - ${response.message()}")
+                Log.e("getFinanceNews", "Nenhuma notícia encontrada.")
                 Resource.Error("Nenhuma notícia financeira encontrada.")
             }
+
         } catch (e: Exception) {
-            // Caso ocorra algum erro
-            Log.e("NewsRepositoryImplementation", "Erro ao fazer requisição: ${e.message}")
+            Log.e("getFinanceNews", "Erro: ${e.message}")
             Resource.Error("Erro ao buscar notícias financeiras: ${e.message}")
         }
     }
 
-
 }
+
+
+
+
 
 
 

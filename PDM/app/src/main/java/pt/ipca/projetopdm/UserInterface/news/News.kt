@@ -38,7 +38,6 @@ fun News(navController: NavController, newsRepository: NewsRepository) {
 
     //NavGraphSetup(navController = navController, newsRepository = newsRepository, auth = auth)
 
-    // Usar LaunchedEffect para buscar notícias de forma assíncrona
     LaunchedEffect(Unit) {
         try {
             result.value = newsRepository.getFinanceNews("us")

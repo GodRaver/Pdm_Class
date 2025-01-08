@@ -1,5 +1,6 @@
 package pt.ipca.projetopdm.UserInterface.news.presentation.component
 
+import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,6 +9,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -26,13 +29,18 @@ fun BottomSheetComponent(
 
     article: Data,
     //Sim: Similar,
-    onReadFullStoryButtonClicked: () -> Unit
+    onReadFullStoryButtonClicked: (String) -> Unit
 
 ) {
 
     Surface(modifier = Modifier.padding(16.dp)) {
 
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Log.d("BottomSheetComponent", "Recebendo artigo: ${article.title}")
+        Column(horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+        ) {
 
             Text(text = article.title ?: "Sem titulo", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(8.dp))
@@ -61,7 +69,9 @@ fun BottomSheetComponent(
 
 
             Spacer(modifier = Modifier.height(8.dp))
-            Button(onClick = onReadFullStoryButtonClicked,
+            Button(onClick = {
+                onReadFullStoryButtonClicked(article.url)
+                             },
                 modifier = Modifier.fillMaxWidth()
 
             ) {

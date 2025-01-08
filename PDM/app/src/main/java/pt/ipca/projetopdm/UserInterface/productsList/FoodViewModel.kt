@@ -129,7 +129,7 @@ class FoodViewModel(application: Application) : AndroidViewModel(application) {
 
 
 
-    fun saveList(name: String) {
+    fun saveList(name: String) {    //atencao é parecido com saveList mas tem em conta a SINCRONIZACAO com o firebase, usar ou nao depende da implementacao
         val userId = currentUserId ?: run {
             Log.e("FoodViewModel", "Utilizador não autenticado. Não é possível salvar a lista.")
             return
@@ -143,15 +143,34 @@ class FoodViewModel(application: Application) : AndroidViewModel(application) {
 
             val savedList = SavedList(listId = listIdInt, name = name, createdAt = createdAt, userId = userId)
             syncListToFirestore(savedList) // Enviar para Firestore
+            createSharedList(savedList.listId.toString(), userId)
         }
     }
 
 
 
+    fun createSharedList(listId: String, ownerId: String) {
+        val firestore = FirebaseFirestore.getInstance()
 
+        val sharedList = hashMapOf(
+            "listId" to listId,
+            "ownerId" to ownerId,
+            "sharedWith" to listOf<String>()
+        )
 
+        firestore.collection("shared_lists")
+            .document(listId)
+            .set(sharedList)
+            .addOnSuccessListener {
+                Log.d("createSharedList", "Documento de compartilhamento criado com sucesso!")
+            }
+            .addOnFailureListener { e ->
+                Log.e("createSharedList", "Erro ao criar o documento de compartilhamento", e)
+            }
+    }
 
-    fun createSavedList(name: String) {
+/*
+    fun createSavedList(name: String) {  //funcao redundante, acrescenta-se caso nao funcione outra implementacao
         val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
         val newSavedList = SavedList(
             name = name,
@@ -163,6 +182,8 @@ class FoodViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+
+ */
 
     fun deleteSavedList(listId: Int) {
         viewModelScope.launch {
@@ -191,7 +212,7 @@ class FoodViewModel(application: Application) : AndroidViewModel(application) {
     }
 
 
-    fun fetchfLists(currentUserId: String) {
+    fun fetchLists(currentUserId: String) {
         val firestore = FirebaseFirestore.getInstance()
 
         firestore.collection("shared_lists")
@@ -253,6 +274,7 @@ class FoodViewModel(application: Application) : AndroidViewModel(application) {
             }
     }
 
+    /*
     fun syncSavedListsWithFirebase() {
         val userId = currentUserId ?: return
         FirebaseFirestore.getInstance()
@@ -270,6 +292,8 @@ class FoodViewModel(application: Application) : AndroidViewModel(application) {
                 Log.e("Firestore", "Erro ao sincronizar listas do Firestore", e)
             }
     }
+     */
+
 
     fun listenToSavedLists() {
         val userId = currentUserId ?: return
@@ -328,20 +352,23 @@ class FoodViewModel(application: Application) : AndroidViewModel(application) {
             }
     }
 
-    /*
-
-    val sharedLists: LiveData<List<SharedList>> = liveData {
-        val userId = currentUserId ?: run {
-            emit(emptyList<SharedList>())
-            return@liveData
-        }
-        val lists = foodDao.getSharedLists(userId)
-        emit(lists)
+    suspend fun shareList(foodDao: FoodDao, savedListId: Int, ownerId: String, sharedWith: String) {
+        val sharedList = SharedList(
+            listId = savedListId,
+            ownerId = ownerId,
+            sharedWith = sharedWith
+        )
+        foodDao.addSharedList(sharedList)
     }
 
 
 
-     */
+
+
+
+
+
+
 
 }
 

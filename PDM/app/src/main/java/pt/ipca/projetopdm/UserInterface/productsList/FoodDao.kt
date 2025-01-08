@@ -69,16 +69,33 @@ interface FoodDao {
     @Query("UPDATE saved_lists SET synced = :status WHERE listId = :listId")
     suspend fun updateSyncedStatus(listId: Int, status: Boolean)
 
-    @Query("SELECT * FROM saved_lists WHERE sharedWith LIKE '%' || :currentUserId || '%'")
-    fun getSharedLists(currentUserId: String): LiveData<List<SavedList>>   //obter as listas compartilhadas diretamente do room
 
+    @Query("SELECT * FROM shared_lists WHERE sharedWith LIKE '%' || :currentUserId || '%'")
+    fun getSharedLists(currentUserId: String): LiveData<List<SharedList>>   //obter as listas compartilhadas diretamente do room
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun addSharedList(sharedList: SharedList)
+
+    @Transaction
+    @Query("""
+        SELECT * FROM saved_lists
+        INNER JOIN shared_lists ON saved_lists.listId = shared_lists.listId
+        WHERE sharedWith LIKE '%' || :currentUserId || '%'
+    """)
+    fun getSharedListsWithDetails(currentUserId: String): LiveData<List<SavedListWithFoods>>
+
+    @Query("DELETE FROM shared_lists WHERE listId = :listId")
+    suspend fun deleteSharedList(listId: Int)
+
+    @Query("SELECT * FROM shared_lists WHERE listId = :listId")
+    suspend fun getSharedListByListId(listId: Int): SharedList?
 
 
 }
 
 
 
-@Database(entities = [Food::class, SavedList::class, SavedListFoodCrossRef::class], version = 12)
+@Database(entities = [Food::class, SavedList::class, SavedListFoodCrossRef::class, SharedList::class], version = 14)
 @TypeConverters(ConverterDate::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun foodDao(): FoodDao

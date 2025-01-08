@@ -1,5 +1,6 @@
 package pt.ipca.projetopdm.UserInterface.productsList
 
+import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -33,8 +34,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+//import kotlinx.coroutines.flow.internal.NoOpContinuation.context
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -121,7 +125,9 @@ fun SelectListToShare(
 fun ShareListWithUser(
     onShareWithUser: (String) -> Unit
 ) {
-    var userId by remember { mutableStateOf("") }
+    var userEmail by remember { mutableStateOf("") }
+    val context = LocalContext.current
+
 
     Column(
         modifier = Modifier
@@ -136,15 +142,44 @@ fun ShareListWithUser(
         )
 
         TextField(
-            value = userId,
-            onValueChange = { userId = it },
-            label = { Text("ID do Utilizador") },
+            value = userEmail,
+            onValueChange = { userEmail = it },
+            label = { Text("Insira o email para enviar: ") },
             modifier = Modifier.fillMaxWidth()
         )
 
-        Button(onClick = { onShareWithUser(userId) }) {
+        Button(onClick = {
+            getUserIdByEmail(userEmail) { userId ->
+                if (userId != null) {
+                    onShareWithUser(userId)
+                } else {
+                    Toast.makeText(context, "Utilizador não encontrado.", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }) {
             Text("Compartilhar")
         }
     }
+}
+
+fun getUserIdByEmail(email: String, onUserFound: (String?) -> Unit) {
+    val db = FirebaseFirestore.getInstance()
+
+    db.collection("Utilizadores")
+        .whereEqualTo("email", email)
+        .get()
+        .addOnSuccessListener { documents ->
+            if (!documents.isEmpty) {
+                val userId = documents.first().id  // userId é a ID do documento
+                onUserFound(userId)
+            } else {
+                // Nenhum utilizador encontrado com esse email
+                onUserFound(null)
+            }
+        }
+        .addOnFailureListener {
+            // Tratar erro de consulta
+            onUserFound(null)
+        }
 }
 

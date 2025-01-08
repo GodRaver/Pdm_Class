@@ -29,6 +29,7 @@ import pt.ipca.projetopdm.UserInterface.chat.Chat
 import pt.ipca.projetopdm.UserInterface.chat.ChatScreen
 import pt.ipca.projetopdm.UserInterface.chat.UserListPeopleScreen
 import android.net.Uri
+import android.widget.Toast
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.room.Room
@@ -45,10 +46,10 @@ import pt.ipca.projetopdm.UserInterface.productsList.FoodScreen
 import pt.ipca.projetopdm.UserInterface.productsList.FoodViewModel
 import pt.ipca.projetopdm.UserInterface.productsList.FoodViewModelFactory
 import pt.ipca.projetopdm.UserInterface.productsList.ReceivedListsScreen
-import pt.ipca.projetopdm.UserInterface.productsList.ReceivedListsScreen
 import pt.ipca.projetopdm.UserInterface.productsList.SavedListsScreen
 import pt.ipca.projetopdm.UserInterface.productsList.SharedListsScreen
 import pt.ipca.projetopdm.UserInterface.productsList.SharedListsScreen
+import pt.ipca.projetopdm.UserInterface.userRecovery.PasswordRecoveryScreen
 
 //import pt.ipca.projetopdm.UserInterface.home.HomeTela
 
@@ -63,7 +64,8 @@ enum class Routes {
     News,
     SavedLists,
     SharedLists,
-    ReceivedLists
+    ReceivedLists,
+    UserRecovery
 }
 
 enum class AuthRoutes {
@@ -165,13 +167,17 @@ fun NavControllerNavigation(auth: FirebaseAuth) {
         composable(route = Routes.Home.name) {
             HomeTela(
                 navController = navController,
-                auth = auth
-
-            ) {
-                auth.signOut() // Realiza o logout
-                Log.i("HomeNavigation", "Logout realizado. Navegando para Login...")
-                navController.navigate(AuthRoutes.Login.name)
-            }
+                auth = auth,
+                onLogout = {
+                    Log.d("ProfileEdit", "Logout iniciado")
+                    auth.signOut()
+                    navController.navigate(AuthRoutes.Login.name) {
+                        popUpTo(0)
+                        launchSingleTop = true
+                    }
+                },
+                userId = auth.currentUser?.uid ?: ""
+            )
         }
 
         //Tela Profile Edit
@@ -309,6 +315,10 @@ fun NavControllerNavigation(auth: FirebaseAuth) {
         val newsStore = RetrofitClient.getNewsStoreApi()
 
 
+
+
+
+
         composable(route =  Routes.News.name) {
 
 
@@ -350,6 +360,8 @@ fun NavControllerNavigation(auth: FirebaseAuth) {
                 val newsRepository = remember { NewsRepositoryImplementation(newsStore) }
                 val viewModel = remember { NewsScreenViewModel(newsRepository, auth) }
 
+
+
                 NewsScreen(
                     state = viewModel.state,
                     onEvent = viewModel::onEvent,
@@ -364,6 +376,8 @@ fun NavControllerNavigation(auth: FirebaseAuth) {
             }
 
         }
+
+        /*
 
         composable(route = "news_screen") {
             Log.d("NavGraph", "Rota de Notícias carregada: news_screen")
@@ -385,6 +399,7 @@ fun NavControllerNavigation(auth: FirebaseAuth) {
                 newsRepository = newsRepository
             )
         }
+         */
 
         composable(
             route = "article_screen?url={url}",
@@ -575,6 +590,58 @@ fun NavControllerNavigation(auth: FirebaseAuth) {
 
 
                 ReceivedListsScreen(viewModel = foodViewModel, auth = FirebaseAuth.getInstance(), onBack = { navController.popBackStack() })
+            }
+        }
+
+        composable(route = Routes.UserRecovery.name) {
+            var isAuthenticated by remember { mutableStateOf(auth.currentUser != null) }
+
+            val context = LocalContext.current
+
+
+
+            DisposableEffect(auth) {
+                Log.d(
+                    "AuthState",
+                    "Verificando autenticação. Utilizador atual: ${auth.currentUser?.email}"
+                )
+
+                val authStateListener = FirebaseAuth.AuthStateListener { firebaseAuth ->
+                    isAuthenticated = firebaseAuth.currentUser != null
+                    Log.d(
+                        "AuthState",
+                        "Novo estado de autenticação: ${firebaseAuth.currentUser?.email}"
+                    )
+                }
+
+                auth.addAuthStateListener(authStateListener)
+                onDispose {
+                    auth.removeAuthStateListener(authStateListener)
+                }
+            }
+
+            if (!isAuthenticated) {
+                Log.d("AuthState", "Utilizador não autenticado. Navegando para Login...")
+                navController.navigate(AuthRoutes.Login.name) {
+                    popUpTo(0)
+                    launchSingleTop = true
+                }
+            } else {
+
+
+
+                PasswordRecoveryScreen(
+
+                    onEmailSent = {
+                        // Exemplo: Mostrar um snackbar ou navegar de volta ao login
+                        Toast.makeText(context, "Email enviado com sucesso!", Toast.LENGTH_LONG).show()
+                        navController.popBackStack() // Volta para a tela anterior
+                    },
+                    onError = { error ->
+                        Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+                    }
+
+                     )
             }
         }
 

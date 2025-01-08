@@ -14,6 +14,8 @@ data class NewsScreenState(
     val isSearchBarVisible: Boolean = false,
     val selectedArticle: Data? = null,
     val searchQuery: String = "",
+    val isSearchActive: Boolean = false,
     val selectedCountry: String = "us",
-    val resource: Resource<List<Data>> = Resource.Loading()
+    val resource: Resource<List<Data>> = Resource.Loading(),
+
 )

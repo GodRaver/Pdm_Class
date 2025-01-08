@@ -2,6 +2,8 @@ package pt.ipca.projetopdm.UserInterface.productsList
 
 import androidx.room.Embedded
 import androidx.room.Entity
+import androidx.room.ForeignKey
+import androidx.room.Index
 import androidx.room.Junction
 import androidx.room.PrimaryKey
 import androidx.room.Relation
@@ -41,10 +43,23 @@ data class SavedListWithFoods(
     val foods: List<Food>
 )
 
+
+@Entity(
+    tableName = "shared_lists",
+    foreignKeys = [ForeignKey(
+        entity = SavedList::class,
+        parentColumns = ["listId"],
+        childColumns = ["listId"],
+        onDelete = ForeignKey.CASCADE
+    )],
+    indices = [Index(value = ["listId"])]
+)
 data class SharedList(
-    val listId: String,
+    @PrimaryKey
+    val listId: Int,
     val ownerId: String,
-    val name: String,
-    val items: List<String>,
+    //val name: String,
+    //val items: List<String>,
     val sharedWith: String
 )
+
